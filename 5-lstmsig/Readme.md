@@ -1,0 +1,3 @@
+`experiment` is the basic code for the experiment.
+
+`multirun` is outer stuff for doing many of these runs on azure. There is a system for sharing a parameter sweep of a program across azure nodes. on some node you have an ipython where you run `import queuing` and then use its facilities to fill the queue (in fact, just with integers). Then you set off the `combs.py` on every instance. `dir.sh` is the entry point for a bash interface for azure administration set up for this experiment. 

@@ -1,0 +1,19 @@
+#ctrl-a f resets ctrl-s behaviour???
+hardstatus alwayslastline
+######################################################################################################
+backtick 1 10000 10000 whoami
+#######################################################################################################
+#hardstatus alwayslastline "%{rW}%1`%{g}@%{b}%H%= %{w}%-w%{Y}(%{y}%n %t%{Y})%{w}%+w %=%{K}%D %{m}%d%{k}/%{b}%m%{B}/%{c}%y %{g}%c"
+hardstatus alwayslastline "%{=}%{r}%1`%{g}@%{b}%H%= %{w}%-w%{y}%n %t%{w}%+w %=%{m}%D %{b}%d%{B}/%{g}%m%{Y}/%{y}%y %{r}%c"
+defscrollback 10000
+startup_message off
+shell /bin/bash
+bind ^a next
+bind ^x split
+bind c screen 1
+bind ^c screen 1
+bind 0 select 10
+screen 1
+
+#JR
+altscreen on

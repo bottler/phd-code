@@ -1,0 +1,79 @@
+#For interactive
+#sudo docker run --rm -i -t gapsystem/gap-docker gap
+#To start from this file having been loaded
+#sudo docker run -ti --rm --volume=$PWD:/asylum gapsystem/gap-docker gap /asylum/code
+#If you want to be able to write to this directory, you might need to worry about permissions,
+#as gap doesn't run as root inside the container. Not a problem for reading.
+#One thing that works is
+#sudo docker run -ti --rm -u $UID --volume=$PWD:/asylum gapsystem/gap-docker bash
+#To run this file
+#cat code | sudo docker run --rm -i gapsystem/gap-docker gap -T -n -q > out.txt
+
+#For running starting from this file, Display seems better than View or Print
+
+#assign with :=
+#end lines with ;
+#end with ;; to suppress printing
+d:=5;#
+a:=IrreducibleRepresentations(SymmetricGroup(d));;
+#b:=a[3];;
+#Print(3,"\n");
+
+#matrix:=2*()^a[3]+(2,3)^a[3]+(1,3,2)^a[3];;
+#a[3] is a mapping, you apply it to something with ^ operator
+#or Image(b,(3,2))
+#RealPart(matrix);;
+#Eigenvalues(Rationals,matrix);;
+#Eigenvalues(GaussianRationals,matrix);;
+
+#Here's how you lift
+#a[3] to a function on gr, so that you
+#could apply it to e.g. 2*(1,2)^emb
+
+s:=SymmetricGroup(d);;
+#gr:= GroupRing(Rationals,s);;
+#might be better to say "DefaultFieldOfMatrixGroup(Image(b))" instead of Cyclotomics
+gr:= GroupRing(Cyclotomics,s);;
+emb:=Embedding(s,gr);
+
+a1:=List(GeneratorsOfGroup(s),x->x^emb);;
+#a2:=List(GeneratorsOfGroup(s),x->x^b);;
+#lift:=AlgebraHomomorphismByImages(gr,FullMatrixAlgebra(Cyclotomics,DimensionOfMatrixGroup(Image(b))),a1,a2);
+
+#Here we define our friend, the element we care about
+
+#friend:=2*()^emb+(2,3)^emb+(1,2,3)^emb;; #our element
+friend:=2*()^emb+(1,2)^emb;;
+if d>=3 then friend:=friend + (1,2,3)^emb; fi;
+if d>=4 then friend:=friend + (1,2,3,4)^emb; fi;
+if d>=5 then friend:=friend + (1,2,3,4,5)^emb; fi;
+if d>=6 then friend:=friend + (1,2,3,4,5,6)^emb; fi;
+#friend:=2*()^emb+(1,2)^emb+(1,2,3)^emb+(1,2,3,4)^emb+(1,2,3,4,5)^emb;; #our element
+#friend:=2*()^emb+(1,2)^emb+(1,2,3)^emb+(1,2,3,4)^emb+(1,2,3,4,5)^emb+(1,2,3,4,5,6)^emb;; #our element
+
+eigenvaluesOfRepn:=function(repn)
+  local a2,lift,liftedFriend,eig,dim;
+  a2:=List(GeneratorsOfGroup(s),x->x^repn);;
+  dim:=DimensionOfMatrixGroup(Image(repn));;
+  Display(11);;
+  lift:=AlgebraWithOneHomomorphismByImagesNC(gr,FullMatrixAlgebra(Cyclotomics,dim),a1,a2);;
+  #Display(12);;
+  liftedFriend:=friend^lift;;
+  #This fails
+  #eig:=Eigenvalues(Cyclotomics,liftedFriend);
+  #Display(liftedFriend);
+  Display(Eigenvalues(Rationals,liftedFriend));#Eigenvalues ignores multiplicity
+  #Display(Eigenvectors(Rationals,liftedFriend));
+  Display(Eigenspaces(Rationals,liftedFriend));
+ 
+  eig:=Eigenvalues(GaussianRationals,liftedFriend);;
+  return eig;
+  end;;
+
+#for b in a do
+#  eigenvaluesOfRepn(b);
+#  od;;
+
+allEigs:=List(a,eigenvaluesOfRepn);
+Display(allEigs);
+
