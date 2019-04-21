@@ -1,0 +1,127 @@
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+%\usepackage{rotating}
+%\usepackage{amslatex}
+\usepackage{siunitx}
+\usepackage{multicol}%for multicol
+\usepackage{blkarray}%blockarray and block
+\usepackage{comment}
+\usepackage{fnbreak}%get a warning if a footnote is split
+\usepackage[section]{placeins}
+\usepackage{listings}
+\lstset{breaklines=true,basicstyle=\ttfamily,language=Python}
+\usepackage{arrayjobx}
+\usepackage{array}%for \newcolumntype
+%\usepackage[shortlabels]{enumitem}
+\usepackage{mathtools}
+\usepackage{afterpage}
+\usepackage{setspace}% for \setstretch
+\usepackage{algorithm}
+\usepackage{algpseudocode}%for algorithmic
+\usepackage{thmtools}%so that autoref works with Lemmas
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.15}
+\usepackage{shuffle}
+\usepackage{textcomp}%for \textrecipe
+\usepackage{fontawesome}%for \faTable
+\usetikzlibrary{calc,shapes,arrows.meta,decorations.markings,arrows}
+\usetikzlibrary{graphs,positioning,svg.path,backgrounds}
+\newcommand{\tikzmark}[1]{\tikz[overlay,remember picture] \node (#1) {};}
+%\usepackage{CJKutf8}%for CJKChar
+
+%\usepackage[backend=biber,backref=true]{biblatex}
+\usepackage[backend=biber,style=alphabetic,backref=true,maxbibnames=10]{biblatex}
+\addbibresource{sigs.bib}
+\usepackage{url}
+
+\usepackage{imakeidx}
+%not a list of definitions, just symbols and abbreviations
+%What is an abbreviation? Is QR? 
+\makeindex[intoc,title=Symbols and abbreviations index]
+\def\jind#1{\index{#1}}
+\def\jindmath#1#2{\index{#2@$#1$}}
+\def\jindv#1{\index{#1v@\texttt{#1}}}
+%Some places I've given up and used \index in the text 
+\definecolor{bluee}{rgb}{0.4, 0.4, 1.0}
+%https://tex.stackexchange.com/questions/134191/line-breaks-of-long-urls-in-biblatex-bibliography
+\setcounter{biburlucpenalty}{8000}
+\setcounter{biburllcpenalty}{8000}
+
+\usepackage{hyperref}
+
+%so that autoref works with algorithms
+\newcommand{\algorithmautorefname}{Algorithm}
+
+%might help url breaking in bibliography
+%\Urlmuskip=0mu plus 1mu minus 1mu
+%also all the emergencystretch/looseness/fussy/sloppy
+%to play with
+%https://tex.stackexchange.com/questions/18505/how-to-use-sloppy-for-just-some-references
+
+\def\ii{{\texttt{iisignature}}}
+\def\pypi{{\texttt{PyPI}}}
+\def\numpy{{\texttt{numpy}}}
+\def\scipy{{\texttt{scipy}}}
+\def\i#1{\index{#1@\texttt{#1}}}
+\def \hilite#1{\underline{\color{blue}\textbf{#1}}}
+%\def \alph#1{{\color{blue}\mathbf{#1}}}
+\def \lex{<_L}
+\def\kron{\underline{\otimes}}
+
+\graphicspath{{C:/Users/Jeremy/Dropbox/phd/graphs/}{/home/jeremyr/Dropbox/phd/graphs/}{/Users/reizenstein/DropboxPersonalSymlink/phd/graphs/}}
+
+%\RequirePackage{relsize}
+%\DeclareRobustCommand\CXX{C\kern-.05em \raisebox{.3ex}{\scalebox{0.9}{\textbf{+\kern-.10em+}}}}
+\DeclareRobustCommand\CXX{C\kern-.05em {\scalebox{0.9}{\textbf{+\kern-.10em+}}}}
+%\DeclareRobustCommand\{\texorpdfstring{\CXX}{C++}}
+\DeclareRobustCommand\CC{C\texttt{++}}
+\def\bftab{\fontseries{b}\selectfont}
+\newtheorem{theorem}{Theorem}
+%\newtheorem*{theorem*}{Theorem}%bad idea, because you can't refer to it.
+\newtheorem{definition}[theorem]{Definition}
+%\newtheorem{outsideTheorem}[theorem]{Theorem}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\area}{\mathsf{area}}
+\newcommand{\Area}{\mathsf{Area}}
+\newcommand{\emptyword}{\epsilon}
+\newcommand{\ds}{d} % dimension of the signal
+\newcommand{\TC}{T((\R^\ds))} % concat
+\newcommand{\TS}{T(\R^\ds)} % shuffle
+\newcommand{\GL}{\operatorname{GL}}
+\newcommand{\SO}{\operatorname{SO}}
+%\newcommand{\id}{\operatorname{id}}
+\newcommand{\id}{\mathsf{id}}
+
+\newcommand{\evaluatedAt}[1]{\,\raisebox{-.5em}{$\vert_{#1}$}}
+
+\def\hssymbol{\mathbin{\succ}}
+\def\hs#1#2{#1\hssymbol#2} %half shuffle
+%\def\hs#1#2{z(#1,#2)} %half shuffle
+\def\areab#1{\underline{\area}(#1)}
+\def\areabb{\underline{\area}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\spann}{\operatorname{span}}
+\newcommand{\sign}{\operatorname{sign}}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator{\softmax}{softmax}
+
+%indicate that this file has been had
+\def\headerIncludedJR{}
+\def\endDocumentJR{}
+
+%general hints
+%https://homepages.inf.ed.ac.uk/imurray2/compnotes/latex.html

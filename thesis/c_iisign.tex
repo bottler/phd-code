@@ -1,0 +1,690 @@
+\input{outerheader}
+\section{Introduction}
+\label{sec:iisigintro}
+
+In this chapter we present algorithms for efficiently calculating the signatures and log signatures of piecewise linear paths. We also talk about efficiently backpropagating derivatives through these functions. This is useful for any machine learning task where these calculations need to be performed repeatedly. This functionality is implemented in the \ii\ Python package.
+
+The focus of the \ii\ package is the calculation of the signature for piecewise-linear paths in fixed-dimensional spaces.
+In these relatively low dimensional spaces, paths typically move in all their dimensions, so only rarely will elements of the signature be zero.
+We call this the \emph{dense} case.
+We study the mathematical properties of the free Lie algebra to implement a range of algorithms.
+We also benchmark the performance of these algorithms, and provide an efficient open-source implementation.
+
+An existing open-source library for calculating signatures is the \verb|esig| package from CoRoPa\cite{coropa}.
+However, this package is optimized to operate efficiently on another type of path: ones that live in high dimensional spaces, but that only move in certain combinations of input dimensions.
+Most of the elements of the signatures are zero.
+We call this the \emph{sparse} case.
+%While \verb|esig|'s algorithm can be applied in the dense case, we will see that dense algorithms can be much more efficient.
+\iffalse
+An existing open-source implementation is the \verb|esig| package from CoRoPa\cite{coropa}.
+CoRoPa operates in a sparse fashion, keeping track of only non-zero elements of the signature. 
+This has been known as %cite
+\emph{sparse signatures}.
+It is useful in some applications of signatures in high-dimensional spaces where the path only moves in certain combinations of the input dimensions.
+
+The particular focus of \ii\ is piecewise-linear fixed-dimensional paths which typically move in all their dimensions. %specified as a series of points between which they are straight lines.
+In this setting, usually none of the elements of the signature are zero. Sparse methods impose a significant overhead in this context; \ii\ is directed at these \emph{dense} signatures. 
+
+We study the mathematical properties of the free Lie algebra to implement algorithms for calculating signatures in the dense case. We also benchmark the performance of these algorithms, and provide an efficient open-source implementation.
+\fi
+
+
+\section{Signatures}\label{sec:sigs}
+
+Calculating the signature of a path can be done inductively relying on the following two rules.
+\begin{itemize}
+	\item If $\gamma$ is a straight line defined on the interval $[a,b]$ then its signature as a function on words is \begin{equation}X^\gamma_{a,b}(i_1i_2\ldots i_m)=\frac1{m!}\prod_{j=1}^m(\gamma_{i_j}(b)-\gamma_{i_j}(a))\label{eq:straightsig}.\end{equation} 
+	
+	Grouped by levels, using $x=\gamma(b)-\gamma(a)$ as the displacement, the signature looks like
+	\begin{equation}
+	\left(1,x,\frac{x\otimes x}{2!},\frac{x\otimes x\otimes x}{3!},\dots\right)
+	\end{equation}
+	where $\otimes$ is the tensor product. Alternatively, if each level is thought of as a vector of numbers, this formula should be read with $\otimes$ denoting the Kronecker product.
+	\item If $a<b<c$ then the result (from \cite{chen}) known as \textbf{Chen's identity} states that \begin{equation}
+	X^\gamma_{a,c}(i_1i_2\ldots i_m) %$
+	=\sum_{j=0}^mX^\gamma_{a,b}(i_1i_2\ldots i_{j-1})X^\gamma_{b,c}(i_ji_{j+1}\ldots i_m).\label{eq:chen}
+	\end{equation}
+	
+	Grouped by levels, this signature looks like
+	\begin{align}
+	\Big(1,X^{(1)}_{a,c},X^{(2)}_{a,c},\dots\Big)=\Big(1,X^{(1)}_{a,b}+X^{(1)}_{b,c},X^{(2)}_{a,b}+X^{(1)}_{a,b}\otimes X^{(1)}_{b,c}+X^{(2)}_{b,c},\qquad\qquad\\ X^{(3)}_{a,b}+X^{(2)}_{a,b}\otimes X^{(1)}_{b,c}+X^{(1)}_{a,b}\otimes X^{(2)}_{b,c}+X^{(3)}_{b,c},\dots\Big)\nonumber
+	\end{align}
+	
+\end{itemize}
+
+When calculating the signature of a path given as a series of straight-line displacements, we start with the signature of the first displacement (calculated from (\ref{eq:straightsig})) and step-by-step concatenate on the signature of each succeeding displacement using (\ref{eq:chen}).
+
+Level $m$ of the signature contains $d^m$ values. Calculating it for a displacement using (\ref{eq:straightsig}) takes $d+d^{m}$ multiplications beyond what has already been calculated for lower levels. However, in the signature of a straight line, each level is a symmetric tensor and so level $m$ only contains $\binom{d+m-1}{m}$ distinct values, using the formula for unordered sampling with replacement. An alternative, more complicated, method that takes account of this redundancy exists. Only $d+\binom{d+m-1}{m}$ multiplications are required. 
+Implementing it showed it to be slower, so \ii\ does not use this idea.
+%We wrote an implementation to exploit this symmetry in the $d=2$ case. We found that it runs slower than when we use (\ref{eq:straightsig}), so \ii\ does not use this idea.
+
+
+%\footnote{\url{https://en.wikipedia.org/wiki/Multiset\#Counting_multisets}}. 
+
+\if0
+\section{Log Signatures}\label{sec:logsigs}
+
+Tensor space $T(\mathbb{R}^d)$, in which the signature of a $d$-dimensional path lives, has a notion of logarithm (\cite{FLA}, chapter 3), given by 
+\begin{equation}\label{eq:log}
+\log(1+T)=\sum_{n\ge1}\frac{(-1)^{n-1}T^n}{n}.
+\end{equation}
+%where powers are in the concatenation product
+%The signature itself lies on a submanifold of tensor space.
+%Calculating the log signature expanded
+Let $S$ be the set which consists of level $m$ of the signature of every path in $\mathbb{R}^d$.
+$S$ is not the whole of the vector space $(\mathbb{R}^d)^{\otimes m}$, although it does \textit{span} $(\mathbb{R}^d)^{\otimes m}$
+%\footnote{see Lemma 8 in \cite{JD}}. 
+(see Lemma 8 in \cite{JD}). In fact, they form a lower-dimensional manifold. The 
+logarithm operation %(\cite{FLA}, chapter 3) %$\log:T(\mathbb{R}^d)\to T(\mathbb{R}^d)$ is defined by $\log(1+T)=\sum_{n\ge1}\frac{(-1)^{n-1}T^n}{n}$. 
+maps this manifold continuously one-to-one to a linear subspace of $T(\mathbb{R}^d)$.
+%(Note: as formal series, it is not true that the logarithms of all signatures of paths without truncation form a linear subspace.)
+The representation of the logarithm of the signature in a basis of this subspace is called the \textbf{log signature}. %The log signature of a path up to level $m$ is determined by an easy calculation from its signature up to level $m$, and t
+%The passage to the log signature can be considered an information compression or a dimensionality reduction. 
+
+The subspace in which the log signature of a path in $\mathbb{R}^d$ up to level $m$ lives is equivalent to the free $m$-nilpotent Lie algebra of type $d$, $\mathfrak{n}_{d,m}$. The log signature is like a compressed version of the signature up to the same level -- for every value in $\mathfrak{n}_{d,m}$, there is a path with that truncated log signature. The main source for the relevant mathematics is \cite{FLA} and an informal introduction is given in \cite{LOGSIG}.
+
+$\mathfrak{n}_{d,m}$ is a finite dimensional real vector space, but there is no single obvious basis for it. In order to use the log signature as an efficient representation of a path, we need to choose a fixed basis.
+%We return the log signature in terms of a fixed basis, so that it can be used as an efficient representation of a path. 
+There are two commonly used bases. They are both \emph{Hall bases}\cite{hall1950}. A Hall basis is made up of bracketed expressions, and it is determined by an ordering of all bracketed expressions.
+\begin{itemize}
+	\item The \emph{Lyndon basis}\cite{shirshov}, which is the default in \ii. Each basis element is labelled with a Lyndon word on $\{\alph1,\alph2,\dots,\alph{d}\}$, which is a sequence which comes earlier in lexicographic order than any of its \emph{rotations}. (For example, the rotations of $\alph{2432}$ are $\alph{2243}$, $\alph{3224}$ and $\alph{4322}$. $\alph{2243}$ and $\alph{1213}$ are Lyndon words but $\alph{31}$ and $\alph{3224}$ are not.) %in which each Lyndon word is the foliage of exactly one basis element. Within each level, we order the basis elements so that their Lyndon words are in alphabetical order.
+	\item The standard/canonical Hall basis, which we implement in such a way as to match CoRoPa\cite{coropa} exactly. %This basis still has the property that each element can be identified by its foliage
+	The ordering of equal-length expressions $[A,B]$ and $[C,D]$ is defined recursively: $[A,B]<[C,D]$ if either $A<C$ or ($A=C$ and $B<D$).
+\end{itemize}
+
+In these bases, each basis element is either a letter or a single bracketed expression, whose left and right are basis elements. We always pick an order on basis elements such that shorter bracketed expressions come before longer ones, and single letters, which are the first level, are in their natural order $\alph1<\alph2<\dots<\alph{d}$.
+
+Much of the algebra calculations can be done once in the \verb|prepare| function. This is a major contribution of \ii\ and ensures for given $d$, $m$ and the choice of basis that the calculation is as efficient as possible. This is relevant in machine learning applications where typically many similar calculations are required.
+\fi
+
+\section{Log Signatures directly}\label{sec:c}
+
+The log signature of a straight line displacement is just the displacement itself in level 1, and zero in every other level. The log signature of the concatenation of two paths is the Baker-Campbell-Hausdorff (BCH) product of the log signatures of the two paths. The direct method for calculating the log signature relies on being able to transform the log signature of a path given in terms of one of the bases above to the log signature of that path concatenated with a fixed line segment, achieved using the BCH product. \index{BCH@BCH, $\mathrm{bch}$}
+
+The BCH product is an infinite series in bracketed expressions in two indeterminates, which has can be formulated in different equivalent ways. The most straightforward ways express all brackets in the form of some Hall basis of the free Lie algebra of  $\mathbb{R}^2$. For example, using the Lyndon basis:
+\begin{align*}
+\mathrm{bch}(a,b)=a+b+\tfrac12[a,b]+\tfrac1{12}[a,[a,b]]+\tfrac1{12}[[a,b],b]+\tfrac1{24}[a,[[a,b],b]]+\dots.
+\end{align*}
+
+The coefficients in this expansion up to terms of depth twenty have been calculated and distributed by Fernando Casas and Ander Murua at \cite{bchinfo}, using their method described in \cite{bch}. We distribute their file as part of \ii, and read it when necessary. %This is sufficient for log signatures up to level 20.
+
+We can compute the Lie bracket of each pair of basis elements as a combination of other basis elements, and therefore, given two log signatures as combinations of basis elements (the second known to be just a displacement) we can find the expanded expression of their BCH product as a combination of basis elements. By doing this with indeterminates, the library develops an internal representation. 
+
+As an example, in the case where the Lyndon basis is used, and we are concerned with two dimensions up to level two, a log signature looks like
+\[a_0\alph1+a_1\alph2+a_2\alph{12}\]
+The inductive step of the algorithm to accumulate log signatures by adding linear segments for $d=m=2$ is shown in Figure~\ref{fig:F22}. %looks like this.
+
+\begin{comment}
+\def\GETS{\,\mathrel{\texttt{:=}}\,}
+\def\INC#1{#1\,\mathrel{\texttt{+=}}\,}
+\def\DEC#1{#1\,\mathrel{\texttt{-=}}\,}
+\def\DEC#1{#1\,\mathrel{\texttt{+=}}\,-}
+\begin{algorithmic}
+		\setstretch{1.2}
+\Procedure{f22}{log signature $a$ to be modified in place, new displacement $b$}%\Comment{$a$ the log signature, $b$ the new displacement}
+	\State \verb|t[0] = b[1]a[0]|
+	\State $t[0]\GETS b[1]a[0]$
+	\State $t[1]\GETS b[0]a[1]$
+	\State $\INC{a[2]}\frac12t[0]$
+	\State $\DEC{a[2]}\frac12t[1]$
+	\State $\INC{a[2]}b[2]$
+	\State $\INC{a[1]}b[1]$
+	\State $\INC{a[0]}b[0]$
+\EndProcedure
+\end{algorithmic}
+\end{comment}
+
+\newsavebox{\Lst}
+\begin{figure}[H]
+%\newsavebox{\Lst}
+%\newsavebox{\Lstt}
+%https://tex.stackexchange.com/questions/70145/lstlistings-framed-code
+\iffalse
+\begin{lrbox}{\Lst}
+%\begin{lstlisting}[language=Python,keywordstyle=\color{blue},commentstyle=\tt\color{red}]
+\begin{lstlisting}[language=C]
+void F22(log_signature& a, new_displacement& b) {
+    t[0]  = b[1]*a[0]; // Construct monomials
+    t[0]  = b[1]*a[0];
+    t[1]  = b[0]*a[1];
+    a[2] += t[0]/2;    // Extend log signature in-place
+    a[2] -= t[1]/2;
+    a[2] += b[2];
+    a[1] += b[1];
+    a[0] += b[0];
+}
+\end{lstlisting}
+\end{lrbox}
+\fi
+
+\begin{lrbox}{\Lst}
+\begin{lstlisting}[language=Python]
+def F22(a, b):
+    # Construct monomials of log signature a
+    #  and displacement b
+    t[0] = b[1] * a[0]
+    t[1] = b[0] * a[1]
+    # Extend log signature in-place
+    a[2] += t[0] / 2    
+    a[2] -= t[1] / 2
+    a[0:2] += b[:]
+\end{lstlisting}
+\end{lrbox}
+\begin{center}
+\fbox{\usebox{\Lst}}
+%\fbox{\usebox{\Lstt}}
+\end{center}
+\caption[Pseudocode to concatenate a displacement onto a level 2 log signature.]{\label{fig:F22}Algorithm to accumulate a new displacement into a log signature in the Lyndon basis with $d=2$ and $m=2$.}
+\end{figure}
+%\newpage
+If we go up to level 3, a log signature looks like
+%\newpageSimple use of \ii.
+\[a_0\alph1+a_1\alph2+a_2\alph{12}+a_3\alph{112}+a_4\alph{122},\] with the final algorithm being as shown in Figure~\ref{fig:F23}.
+\iffalse
+\begin{multicols}{3}
+\begin{algorithmic}
+\Procedure{f23}{log signature $a$, new displacement $b$}%\Comment{$a$ the signature, $b$ the new displacement}
+\State $t[0]\gets b[1]a[0]$
+\State $t[1]\gets b[1]a[2]$
+\State $t[2]\gets b[0]a[1]$
+\State $t[3]\gets b[0]a[2]$
+\State $t[4]\gets b[1]t[0]$
+\State $t[5]\gets b[0]t[0]$
+\State $t[6]\gets b[1]t[2]$
+\State $t[7]\gets a[0]t[0]$Simple use of \ii.
+\State $t[8]\gets a[1]t[0]$
+\State $t[9]\gets b[0]t[2]$
+\State $t[10]\gets a[0]t[2]$
+\State $t[11]\gets a[1]t[2]$
+\State $a[2]\gets a[2]+\frac12t[0]$
+\State $a[2]\gets a[2]-\frac12t[2]$
+\State $a[3]\gets a[3]-\frac1{2}t[3]$
+\State $a[3]\gets a[3]-\frac1{12}t[5]$
+\State $a[3]\gets a[3]+\frac1{12}t[7]$
+\State $a[3]\gets a[3]+\frac1{12}t[9]$
+\State $a[3]\gets a[3]-\frac1{12}t[10]$
+\State $a[4]\gets a[4]+\frac1{2}t[1]$
+\State $a[4]\gets a[4]+\frac1{12}t[4]$
+\State $a[4]\gets a[4]-\frac1{12}t[6]$
+\State $a[4]\gets a[4]-\frac1{12}t[8]$
+\State $a[4]\gets a[4]+\frac1{12}t[11]$
+\State $a[4]\gets a[4]+b[4]$
+\State $a[3]\gets a[3]+b[3]$
+\State $a[2]\gets a[2]+b[2]$
+\State $a[1]\gets a[1]+b[1]$
+\State $a[0]\gets a[0]+b[0]$
+\EndProcedure
+\end{algorithmic}
+\end{multicols}
+\begin{algorithmic}
+	\setstretch{1.35}
+	\Procedure{f23}{log signature $a$ to be modified in place, new displacement $b$}%\Comment{$a$ the signature, $b$ the new displacement}
+	\State $t[0]\gets b[1]a[0]$;
+	$t[1]\gets b[1]a[2]$;
+	$t[2]\gets b[0]a[1]$;
+	$t[3]\gets b[0]a[2]$
+	\State $t[4]\gets b[1]t[0]$;
+	$t[5]\gets b[0]t[0]$;
+	$t[6]\gets b[1]t[2]$;
+	$t[7]\gets a[0]t[0]$;
+	$t[8]\gets a[1]t[0]$;
+	
+	$\qquad t[9]\gets b[0]t[2]$;
+	$t[10]\gets a[0]t[2]$;
+	$t[11]\gets a[1]t[2]$
+	\State $a[2]\gets a[2]+\frac12 t[0]-\frac12t[2]$
+	\State $a[3]\gets a[3]-\frac1{2}t[3]-\frac1{12}t[5]+\frac1{12}t[7]+\frac1{12}t[9]-\frac1{12}t[10]$
+	\State $a[4]\gets a[4]+\frac1{2}t[1]+\frac1{12}t[4]-\frac1{12}t[6]-\frac1{12}t[8]+\frac1{12}t[11]$
+	\State $a[0:4]\gets a[0:4]+b[0:4]$
+	\EndProcedure
+\end{algorithmic}
+\fi
+
+\begin{figure}[H]
+\begin{lrbox}{\Lst}
+\begin{lstlisting}[language=Python]
+def F23(a, b): # Log signature a and displacement b
+    # Calculate monomials of a and b
+    t[0]   += b[1] * a[0] # Order 2 monomials 
+    t[1]   += b[1] * a[2]
+    t[2]   += b[0] * a[1]
+    t[3]   += b[0] * a[2]
+    t[4]   += b[1] * t[0] # Order 3 monomials 
+    t[5]   += b[0] * t[0] #  calculated from
+    t[6]   += b[1] * t[2] #  t[i], i<=4
+    t[7]   += a[0] * t[0]
+    t[8]   += a[1] * t[0]
+    t[9]   += b[0] * t[2]
+    t[10]  += a[0] * t[2]
+    t[11]  += a[1] * t[2]
+    # Extend log signature in-place
+    a[2]   +=  t[0]/2 - t[2]/2
+    a[3]   += -t[3]/2 - t[5]/12 + t[7]/12 + 
+                      t[9]/12 - t[10]/12
+    a[4]   +=  t[1]/2 + t[4]/12 - t[6]/12 - 
+                      t[8]/12 + t[11]/12
+    a[0:2] +=  b[:]
+\end{lstlisting}
+\end{lrbox}
+\begin{center}
+\fbox{\usebox{\Lst}}
+\end{center}
+\caption[Pseudocode to concatenate a displacement onto a level 3 log signature.]{\label{fig:F23}Algorithm to accumulate a new displacement into a log signature in the Lyndon basis with $d=2$ and $m=3$.}
+\end{figure}
+These functions have a lot of common structure. First a sequence of monomials in the input elements are constructed in the temporary array $t$. Higher order monomials are calculated inductively from other elements of $t$ to deduplicate the necessary multiplications.
+Then some members of $a$ are incremented by some multiples of some of the temporary variables. Then the first $d$ elements of $a$ are incremented by all elements of $b$. Exactly which is given by the \verb|FunctionData| structure.
+In general these functions are long and branching-free. The variable $a$ is modified in-place to produce the log signature of the extended path.
+
+The basis (of the free Lie algebra on 2 symbols) used to express the BCH formula does not change the code we get, because the various equivalent bracketed expressions come to the same thing when they have been multiplied out. We use the Lyndon basis because it has slightly fewer terms, as \cite{bch} describes and partially explains. This choice is independent of the choice of basis (of the free Lie algebra on $d$ symbols) in which the log signature is expressed.
+In general, we end up with fewer terms and a slightly faster calculation when the Lyndon basis is used for the log signature.
+
+\section{Log Signatures from Signatures}\label{sec:s}
+A simple method, which we call the \verb|"S"| method\jindv{S} for calculating the log signature of a path is to calculate its signature first, and then convert to the log signature. The first step in doing the conversion is taking the logarithm itself in tensor space. This explicitly uses the formula (\ref{eq:log}) 
+%\begin{equation}\label{eq:log}
+%\log(1+T)=\sum_{n\ge1}\frac{(-1)^{n-1}T^n}{n}
+%\end{equation}
+where $n$ only needs to go as high as the required level, and the power is in the concatenation product. This results in the log signature as an element of tensor space (which means it is as long as a signature), which is returned when \verb|logsig| is called with the \verb|"X"| (\emph{expanded}) method. The exact order of evaluation of formula (\ref{eq:log}) for best efficiency which we use is one which was suggested by Mike Giles\cite{Giles}.
+
+%%%ADD STUFF ABOUT HORNER METHOD 
+%%%...private communication from Professor Terry Lyons and Professor Mike Giles
+
+To express this Lie element into a specified basis, we need to project it. We calculate a projection explicitly. There are known explicit forms for projections, for example the map given by the Dynkin-Specht-Wever lemma directly (\cite{DSWLemma}), which requires more operations. The \verb|prepare| function calculates a projection upfront.
+
+Given the bracketed expression of a basis element with $m$ letters, we can easily find its expression in expanded space, by multiplying out the brackets. For example, $[[\alph1,\alph3],\alph3]$ is $\alph{133}-2\,\alph{313}+\alph{331}$. This gives us the full matrix $M_m$ to transform each level of the log signature to its expanded version. Each column of $M_m$ is labelled with a basis element, and each row is labelled with one of the $d^m$ words of length $d$. To compress level $m$ a given expanded log signature $x_m$ to its value $c_m$ in terms of a basis, we just need to solve a least squares problem $M_mc_m=x_m$. This problem is a very overdetermined system which is known to have an exact answer, up to rounding considerations. $M_m$ is tall and skinny. 
+
+The words occurring in the terms of the expansion of such a bracketed expression are anagrams of the foliage of the expression. 
+In the terminology of \cite{FLA}, these operations preserve the \emph{fine homogeneity}.
+In that same example, for instance, $\alph{133}$, $\alph{313}$ and $\alph{331}$ are anagrams of $\alph{133}$. This leads to a lot of sparsity in the matrix $M_m$. Permuting the rows and columns to gather anagrams makes $M_m$ be a block diagonal matrix. We can save time doing the transformation by solving a separate linear system for each equivalence class of anagrams of words of length $m$.
+
+For the standard Hall basis, this is exactly the procedure which we follow. In \verb|prepare|, we determine all the mapping matrices between anagram classes of the log signature and its expansion, and then we calculate all their Moore-Penrose pseudoinverses, so that solving the systems is just a matrix multiplication. 
+The number of words in an anagram set containing $m$ letters where the frequency of the $i$th letter is $n_i$ is %$\{n_1,\dots,n_q\}$ is 
+given by a multinomial coefficient $\frac{m!}{n_1!\dots n_d!}$. The number of Lie basis elements in an anagram set is given by the second Witt formula of Satz 3 of \cite{witt} as
+\def\dummycommonfactor{\delta}
+%	https://tex.stackexchange.com/questions/2607/spacing-around-left-and-right#comment3778_2610
+\def\lyn#1#2{\ensuremath{{\ell_{#1}}{\left(#2\right)}}}
+\begin{equation}\label{eq:witt2}\lyn{m}{n_1,\dots,n_d}=\frac1m\sum_{\dummycommonfactor|n_i}\frac{\mu(\dummycommonfactor) (\frac{m}{\dummycommonfactor})!}{(\frac{n_1}{\dummycommonfactor})!\dots(\frac{n_d}{\dummycommonfactor})!},
+\end{equation} where $\dummycommonfactor$ ranges over all common factors of the $n_i$ and $\mu$ is the M\"obius function. In the simple special case that the words have $m$ distinct letters, there are $m!$ words and $(m-1)!$ basis elements. In the Lyndon case, this formula makes sense because the Lyndon words in such a set of $m!$ words are just all that begin with the lowest letter. Typically the largest anagram sets are the ones with about the same number of each letter. For them, (\ref{eq:witt2}) is just $\frac1m$ times the number of words in the set because 1 is the only value of $\dummycommonfactor$. For example, looking at level 10 for a 3-dimensional path, the signature has 59049 elements and the log signature 5880, and there are 63 anagram classes.\footnote{The count is $63=\binom{10+3-1}{10}-3$ using the formula for unordered sampling with replacement and the fact that no basis element above level 1 has only one distinct letter in it.} The 12 most balanced anagram classes account for 3708 elements of the log signature, or $63.1\%$ of it. 
+
+\begin{table}
+\begin{center}
+\begin{tabular}{ccccc}
+\hline
+%letter frequencies&number of sets&\multicolumn{2}{c}{number of elements each}\\
+%&&signature&log signature\\
+\multicolumn{1}{p{1.9cm}}{\centering letter\\frequencies}
+&\multicolumn{1}{p{1.5cm}}{\centering number\\of\\classes}&\multicolumn{1}{p{2cm}}{\centering signature\\elements\\in each}&\multicolumn{1}{p{2cm}}{\centering log signature\\elements\\in each}&\multicolumn{1}{p{2cm}}{\centering total log \\signature elements}\\
+\hline
+$\{4,3,3\}$&3&4200&420&1260\\
+$\{4,4,2\}$&3&3150&312&936\\
+$\{5,3,2\}$&6&2520&252&1512\\
+$\{5,4,1\}$&6&1260&126&756\\
+$\{6,2,2\}$&3&1260&124&372\\
+\hline
+\end{tabular}
+\caption[The sizes of the largest anagram classes for level 10 of $d=3$]{\label{tab:anagramClasses}The sizes of the largest anagram classes for level 10 of $d=3$ in decreasing order of number of log signature elements. Many more such statistics have been tabulated in \cite{BLUMLEIN200419}.}
+\end{center}
+\end{table}
+The big anagram classes account for most of the runtime when projecting to the log signature: multiplying a $420\times4200$ matrix by a 4200-vector takes 80\% more multiplications than multiplying a $312\times3150$ matrix by a 3150-vector and so on.
+
+\subsection{Lyndon case}
+If the Lyndon basis is required, then we have a more efficient implementation, which depends on a special property it has. Recall the notation $P_a$ (\autoref{sec:logsigs} above and pages 89--91 of \cite{FLA}) for the Lie polynomial corresponding to the Hall word $a$, i.e.~the polynomial you get by multiplying out the bracketed expression corresponding to the unique basis element whose foliage is $a$. 
+Recall also that in the Lyndon basis the Lyndon words \emph{are} the Hall words. % This notation is used in the statement of the following.
+We have
+\begin{theorem}[Theorem 5.1 of \cite{FLA}]
+	The set of Lyndon words, ordered alphabetically, is a Hall set. The corresponding Hall basis has the following triangularity property: for each word $w=l_1\dots l_n$ written as a decreasing product of Lyndon words, the polynomial $P_w=P_{l_1}\dots P_{l_n}$ is equal to $w$ plus a $\mathbb{Z}$-linear combination of greater words.
+\end{theorem}
+
+The simplest case of the final statement, where $w$ is itself a single Lyndon word, gives the following useful fact. When the bracketed expression corresponding to a Lyndon word is expanded and terms are collected and ordered in alphabetical order of the word, the first term will be the Lyndon word itself, with coefficient 1. (For an example, consider the Lyndon word $\alph{133}$; its bracketed expression is $[[\alph1,\alph3],\alph3]$ and we saw earlier that this expands to $\alph{133}-2\,\alph{313}+\alph{331}$.) This means that the tall skinny matrix $M_m$ is lower triangular, as are its anagram blocks. If we take such a block and remove all the rows corresponding to words which are not Lyndon, we are left with the mapping from an anagram class in the compressed log signature to same Lyndon word elements of the expanded signature. It is a square lower triangular matrix with ones on the diagonal. We can now solve the system directly in many fewer operations, with just addition and multiplication, just looking at the Lyndon word elements of the expanded signature. \verb|prepare| determines the necessary indices and matrices, and \verb|logsig| does the solving.
+
+For example, in level 4 on 3 dimensions, the following are the three basis elements which contain two $\alph1$s, a $\alph2$ and a $\alph3$:
+\begin{align*}
+[\alph1,[\alph1,[\alph2,\alph3]]]&=\alph{1123}-\alph{1132}-2\,\alph{1231}+2\,\alph{1321}+\alph{2311}-\alph{3211}\\
+[\alph1,[[\alph1,\alph3],\alph2]]&=\alph{1132}-\alph{1213}+\alph{1231}-\alph{1312}-\alph{1321}+\alph{2131}-\alph{2311}+\alph{3121}\\
+[[\alph1,\alph2],[\alph1,\alph3]]&=\alph{1213}-\alph{1231}-\alph{1312}+\alph{1321}-\alph{2113}+\alph{2131}+\alph{3112}-\alph{3121}
+\end{align*}
+
+The matrix corresponding to these looks as follows
+\begin{align*}
+\begin{blockarray}{cccc}
+\rotatebox{-45}{$[\alph1,[\alph1,[\alph2,\alph3]]]$} & \rotatebox{-45}{$[\alph1,[[\alph1,\alph3],\alph2]]$} & \rotatebox{-45}{$[[\alph1,\alph2],[\alph1,\alph3]]$} \\
+\begin{block}{(ccc)c}
+1 & 0 & 0 & \alph{1123} \\
+-1 & 1 & 0 & \alph{1132} \\
+0 & -1 & 1 & \alph{1213} \\
+-2 & 1 & -1 & \alph{1231} \\
+0 & -1 & -1 & \alph{1312} \\
+2 & -1 & 1 & \alph{1321} \\
+0 & 0 & -1 & \alph{2113} \\
+0 & 1 & 0 & \alph{2131} \\
+1 & -1 & 0 & \alph{2311} \\
+0 & 0 & 1 & \alph{3112} \\
+0 & 1 & -1 & \alph{3121} \\
+-1 & 0 & 1 & \alph{3211} \\
+\end{block}
+\end{blockarray}
+\end{align*}
+and when we restrict to Lyndon words (which in general are not the first rows) we get a matrix which has $m=4$ times fewer rows, and is a lower triangular square matrix with ones on the diagonal.
+
+\nopagebreak %%%Very temporary, makes pagination match what it would be without the minipage wrapper
+%Use a minipage so that the arrows go between things on the same page as each other
+\noindent\begin{minipage}{\textwidth}
+\begin{align*}
+\begin{blockarray}{cccc}
+\rotatebox{-45}{$[\alph1,[\alph1,[\alph2,\alph3]]]$} & \rotatebox{-45}{$[\alph1,[[\alph1,\alph3],\alph2]]$} & \rotatebox{-45}{$[[\alph1,\alph2],[\alph1,\alph3]]$} \\
+\begin{block}{(ccc)c}
+1 & 0 & 0 & \alph{1123} \\
+-1\tikzmark{mark1a} & 1 & 0 & \alph{1132} \\
+0\tikzmark{mark3a} & -1\tikzmark{mark2a} & 1 & \alph{1213} \\
+\end{block}
+\end{blockarray}.
+\end{align*}
+If this matrix is called $M'$ we can solve the equation $M'c'=x'$ directly using
+\begin{align*}
+	c'_1=x'_1\qquad c'_2=x'_2-(-1\tikzmark{mark1b}\, c'_1)\qquad c'_3=x'_3-(0\tikzmark{mark3b}\,c'_1-1\tikzmark{mark2b}\, c'_2).
+%	c'_1=x'_1\qquad c'_2=x'_2-(-1\times c'_1)\qquad c'_3=x'_3-(-1\times c'_2).
+\begin{tikzpicture}[overlay,remember picture]
+\draw[-{Latex},shorten >=8pt,shorten <=-2pt,out=350,in=130,distance=0.5cm,red, opacity=0.5] (mark1a.east) to (mark1b.north);
+\draw[-{Latex},shorten >=6pt,shorten <=0pt,out=300,in=130,distance=0.5cm,red, opacity=0.5] (mark2a.east) -- (mark2b.north);
+%\draw[->,shorten >=8pt,shorten <=0pt,out=330,in=130,distance=0.5cm,red, opacity=0.5] (mark3a.east) to (mark3b.west);
+\draw[-{Latex},shorten >=8pt,shorten <=0pt,out=330,in=130,red, opacity=0.5] (mark3a.east) -- (mark3b.north);
+%distance is something to do with the bezier curving which you get with "to", -- is a straight line
+\end{tikzpicture}
+\end{align*}
+\end{minipage}
+%The calculation runs out of memory in cases when available RAM is not big enough to hold a few signatures, but otherwise seems not to.
+
+\section{Implementation}\label{sec:impl}
+\ii\ is a Python package which is built on \numpy\cite{numpy}, which is ubiquitous for dealing with numerical data in Python. 
+The Python ecosystem is very commonly used for deep learning.
+It %\ii\ 
+is %almost entirely 
+implemented as a \CC\ extension. %There are no extra dependencies, which makes it easy for users to build for themselves using setuptools/distutils. There is also a single Python submodule which contains no code, but is used as a container for a data file which the library uses, the BCH coefficients described elsewhere.
+
+There is a single \verb|.cpp| file which defines the whole interface with Python. The mathematical functionality resides in header files. This \emph{unity build} structure reduces the time to build the whole library, which matters to users, at the cost of incremental build time.
+
+%%%Do we need any of this??
+%In projecting an expanded log signature to a basis, we need to solve a linear system. Instead of directly using another library for this, which would add a dependency, \ii\ calls into \numpy, which is being used anyway. It is also easy for a \CC\ user to access almost all the functionality of the library by including the header files, and examples of this are provided.
+%The significant algebraic computation for the log signature calculation which is not dependent on the input data is done by the function \verb|makeLogSigFunction|, which stores its data in a \verb|LogSigFunction| instance. The \verb|prepare| function in Python does this and returns an opaque immutable object (a capsule) which owns the result.
+\subsection{Signatures}
+We store signatures during the calculation with each level in a contiguous block of memory, which means that accesses are efficient. %vectors of vectors (one vector for each level). Code written in the obvious way works pretty efficiently. 
+We start with the signature of the first displacement and step-by-step concatenate on the signature of each succeeding displacement. The concatenation is done in place, but in simple cases this doesn't seem to make a difference in performance.
+
+We also wrote an implementation of the signature calculation using a template metaprogramming style, where the dimension and level are template parameters, there is no heap memory allocation and all loops are constant length. We compared the methods and learnt that the performance is the same. Because we want to allow arbitrary calculations easily for the user, it is convenient not to code in this way inside iisignature.
+\subsection{Preparing the direct calculation of log signatures}
+The internal representation of the calculation required to convert the log signature of a path into the log signature of that path with a line segment concatenated on the end is stored in an instance of the \verb|FunctionData| class. The calculation depends on the following concepts. The class \verb|Input| represents an indeterminate, and a \verb|Coefficient| is a polynomial in \verb|Input|s %- effectively an element of the semigroup ring of products of \verb|Input|s over floating point \verb|double|s. 
+Elements of the basis of the free Lie algebra we are using are represented by instances of the \verb|BasisElt| class. These are created once for a whole calculation, and they all live together in memory controlled by a \verb|BasisPool| which also remembers their order and those of their Lie products (Lie brackets) which happen to be \verb|BasisElt|s. Elements of the free Lie algebra, Lie polynomials, %which in this case is the free \verb|Coefficient|-vector space over \verb|BasisElt|,
+ are represented by the class \verb|Polynomial|. 
+In a similar way as \cite{coropa}, we store the data of a \verb|Polynomial| with each level separately, this speeds up the multiplication of two of them very much, because it becomes trivial to avoid trying to multiply terms whose combined level will exceed the level we are truncating at. The procedure calculates the BCH product of an arbitrary polynomial (one with a separate indeterminate for each basis element, representing an arbitrary log signature) and an arbitrary level-one polynomial (one which is just a separate indeterminate for each letter, representing the log signature of a single displacement) to produce a \verb|Polynomial| which is exactly what the \verb|FunctionData| needs to calculate.
+
+\begin{table}[H]
+\begin{center}
+%\begin{tabular}{ lp{3cm}ll}
+\def\colwidthtwo{3.2cm}
+\def\colwidththree{3.5cm}
+\renewcommand{\arraystretch}{1.7}
+\begin{tabular}{ llll}
+\hline
+type    &    algebraic structure &   definition &instance represents\\
+\hline
+\verb|double|&field (roughly)&\CC\ builtin&\parbox[t]{3.5cm}{\raggedright\strut constant floating point real}\\
+\verb|Input|&set&indeterminate&numeric input\strut\\
+\verb|Coefficient|&semigroup ring& \parbox[t]{\colwidthtwo}{\raggedright\strut polynomial from $\texttt{double}[\{\texttt{Input}\text{s}\}]$
+}&\parbox[t]{\colwidththree}{\raggedright\strut formula in terms of the inputs}\\
+\verb|BasisElt|&set&\parbox[t]{\colwidthtwo}{\raggedright\strut (fixed but complicated)}&\parbox[t]{\colwidththree}{\raggedright\strut element of the given basis of the FLA}\\[3pt]
+\verb|Polynomial|& %\multicolumn{1}{p{3cm}}{\centering free vector space\\augmented with\\Lie bracket}
+%free vector space augmented with Lie bracket
+%\parbox[c]{3cm}{\linespread{0.1}\selectfont\strut free vector space augmented with Lie bracket\strut}
+%\parbox[c]{3cm}{\strut free vector space augmented with Lie bracket\strut}
+\parbox[t]{3cm}{%\setstretch{0.7}
+\raggedright\strut free vector space augmented with Lie bracket\strut}
+& \parbox[t]{\colwidthtwo}{\raggedright function from \texttt{BasisElt} to \texttt{Coefficient}
+\strut}%$\verb|Coefficient|^{\verb|BasisElt|}$ 
+& element of FLA\\
+\hline
+\end{tabular}
+\caption[Main object types for \texttt{iisignature} Free Lie algebra calculations]{\label{tab:bchobjects}Summary of the main object types for the Free Lie algebra (FLA) calculations}
+\end{center}
+\end{table}
+
+
+In the \verb|"O"|\jindv{O} (\emph{object}) mode, the \verb|prepare| function goes as far as computing this \verb|FunctionData| object, and the \verb|logsig| function follows its instructions for dealing with each displacement, using the function \verb|slowExplicitFunction|.
+
+%I think the class
+
+%in \cite{coropa} reflects an unimplemented idea for doing this kind of precomputed BCH calculation.
+
+\subsection{On-the-fly machine code generation for the direct calculation}
+
+Code specifically compiled for the particular function is more efficient than following instructions given by the \verb|FunctionData| object. Before this library, we wrote some code (described in \cite{LOGSIG} and demonstrated at \url{https://github.com/bottler/LogSignatureDemo}) to generate \CC\ code which can be compiled to give efficient versions of this function. We learnt that while this method is very efficient, it is impractical for many realistic $d$ and $m$ because the function can easily get so large that compilers take unreasonably long times to compile it. Attempting to split them up only helps a small amount. Manual machine code generation avoids this delay. \ii\ therefore provides the \verb|"C"|\jindv{C} method under which it compiles the \verb|FunctionData| itself on-the-fly to machine code internally in a buffer in memory during \verb|prepare|, and all \verb|logsig| need do is run the compiled code for each displacement. This is implemented for x86 and x86-64 architectures, for Windows, Linux and Mac.
+
+The logic for the compilation is in \verb|makeCompiledFunction.hpp|. 
+The \verb|Mem| object represents a buffer for storing machine code, which is allocated in such a way that execution is enabled.
+The \verb|FunctionRunner| object is constructed from a \verb|FunctionData| and allocates a \verb|Mem| and compiles the function into it, providing a \verb|go()| function to run the compiled code. The actual compilation is done by the \verb|Maker| class. The comments in that class explain what it is doing in terms of %assumes the reader's familiarity with details of 
+\verb|x86| and \verb|x86-64|
+ machine code instructions. In the \verb|x86| case, we rely on SSE2 instructions for floating point arithmetic %, to avoid worrying about using the FP stack, and to 
+which enables the logic to be roughly the same as in the 64-bit case. 
+
+%The performance seems to be data-cache limited - simplifying the arithmetic without removing data dependencies does not speed it up.%, and adding NOPs does not slow it down. 
+
+\subsection{Projection from expanded log signature to a basis}
+The \verb|makeMappingMatrix| function calculates the full matrix (in sparse form) to project from tensor space to the desired basis. The identification of anagram classes is performed in \verb|analyseMappingMatrixLevel|. The  \verb|makeSparseLogSigMatrices| function identifies all the data needed to do the projection from this information. When, as often happens, %the foliage of 
+a basis element's anagram class is a singleton, we can just read off its value from the expanded log signature without solving a system. 
+In the standard Hall basis case, we need to calculate the Moore-Penrose pseudoinverses of the identified matrices, and we do this using \numpy\ at the interface level. All the data to do this is stored in the %\verb|LogSigFunction| 
+object which \verb|prepare| generates, and is available to be simply used by \verb|logsig|.% in the \verb|projectExpandedLogSigToBasis| function.
+
+\section{Indicative timings}\label{sec:time}
+Using 64bit Python 3.5 on Ubuntu 16.04LTS with an AMD FX-8320, timings were taken for calculating 100 signatures of randomly generated paths with 100 timesteps in various different ways. We compare here a native python signature implementation using \numpy, the calculation with \ii\ version 0.20,  and the calculation in the package \verb|esig.tosig| of CoRoPa\cite{coropa}, version 0.6.5. Both \ii\ and \verb|esig| use 64-bit floating point internally, but \ii\ is taking and returning 32-bit floating point values in this example, whereas \verb|esig| uses 64 bit throughout. %It should be noted that esig implements \emph{sparse} versions of the signature algorithms, which are well suited to very high dimensional settings, but are not optimized for the lower dimensional cases we explore here.
+It should be noted that \verb|esig| was not specifically written to make this type of calculation fast, but for other types of flexibility (e.g.~the sparse signature case). The dramatic difference shows the advantage of having code written specifically for the dense case. %, so these timings should not be interpreted as a competition. 
+%To an extent, the basic functionality of \ii\ can be thought of as a reimplementation of the functionality of \verb|esig| targetting 
+\newcolumntype{H}{>{\iffalse}c<{\fi}@{}} %H columns do not appear in the output, the (2,6) case is not so interesting.
+
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{ l rrrrrr}
+	\hline
+	\hfill($d$,$m$)             &    (2,6) &   (2,10) & (3,10)   &   (5,5) & (10,4)   \\
+	\hline
+	Python native         &   10.56 &   78.66 & 2458.09 &  55.95 & 118.83  \\
+	%AddinSig          &    0.061 &    1.203 & 61.786   &   1.179 & .        \\
+	%SigToolsSig       &    2.072 &   55.725 & 3338.642 &  60.904 & 189.011  \\
+	%TemplateSig       &    0.013 &    0.192 & 9.488    &   0.227 & 0.440    \\
+	\verb|iisignature.sig|   &   \bftab{0.02} &    \bftab{0.27} & \bftab{10.78}    &   \bftab{0.29} & \bftab{0.61}    \\
+	\verb|esig.tosig.stream2sig|    &    1.98 &    55.51 & 3114.36  &   56.36 & 175.38   \\
+	\hline
+\end{tabular}
+\caption[Signature calculation timings]{\label{tab:sigtiming}Various signature calculation timings in seconds, for 100 random paths of 100 steps each in the given combinations of level and dimension}
+\end{center}
+\end{table}
+Calculating the log signature using the compiled method is quicker than calculating the signature for small depths, but for larger depths the signature becomes significantly faster. %suffers a lot when the depth gets higher. 
+%The projection method therefore becomes the 
+As the depth increases, the projection method therefore becomes the best method to obtain the log signature. For two dimensions, performance is shown in Table~\ref{tab:logsigtiming2d} and plotted in Figure~\ref{fig:logsigtiming2d}, and for three dimensions performance is shown in Table~\ref{tab:logsigtiming3d} and plotted in Figure~\ref{fig:logsigtiming3d}. %some higher-dimensional timings are shown in Table~\ref{tab:logsigtiming}. The hardest case we show here is for the $d=3$ and $m=10$ case, which is slow however it is calculated. The benefit of the Lyndon basis trick for speeding up the projection is only really seen in that case. %It is not clear to me why the direct method is more efficient in the Lyndon basis than the standard Hall basis.
+\iffalse
+\begin{table}[H]
+	\begin{center}
+		\begin{tabular}{ll HHrrrr}
+			\hline
+			&basis        &    (2,6) &   (2,10) & (3,6)& (3,10)   &   (5,5) & (10,4)   \\
+			\hline
+			\verb|iisignature| compiled \verb|C|&Lyndon  &    \bftab{0.005}    &     0.48 & \bftab{0.09}&  249.67  &    0.33 & \bftab{0.57} \\
+			\verb|iisignature| compiled \verb|C|&standard  &0.005&0.53&0.10& 300.80 & 0.34 &0.59       \\
+			\verb|iisignature| simple \verb|O|&Lyndon  &    0.034 &     2.98 &0.60&  555.87  &    1.96 & 2.57     \\
+			\verb|iisignature| simple \verb|O|&standard  &    0.035 &     3.32 & 0.63& 732.88  &    2.05 & 2.64     \\
+			\verb|iisignature| projected \verb|S|&Lyndon  &    0.023 &     \bftab{0.29} &0.11&   \bftab{11.72}  &    \bftab{0.30} & 0.64     \\
+			\verb|iisignature| projected \verb|S|&standard &    0.026 &     0.29 & 0.11&  14.08  &    0.30  & 0.64     \\
+			\verb|esig.tosig.stream2logsig|&standard    &  2.053 &    49.48 & 18.00&3098.02  &   56.65 & 169.52   \\
+			\hline
+		\end{tabular}
+		\caption{\label{tab:logsigtiming}Various log signature calculation timings in seconds, for 100 random paths of 100 steps each for the given ($d$,$m$) combinations}
+	\end{center}
+\end{table}
+\fi
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{rlHHrrrrrrrr}
+	\hline
+%	&basis              &   (2, 2) &   (2, 3) &   (2, 4) &   (2, 5) &   (2, 6) &   (2, 7) &   (2, 8) &   (2, 9) &   (2, 10) & (2,11)\\
+&level:&2&3&4&5&6&7&8&9&10&11\\
+	\hline
+	\verb|C|&Lyndon  &     \bftab{0.01} &     \bftab{0.01} &     \bftab{0.02} &     \bftab{0.03} &     \bftab{0.05} &     \bftab{0.14} &     \bftab{0.52} &     1.64 &      4.90&29.21 \\
+	\verb|C|&\rlap{standard} &     \bftab{0.01} &     \bftab{0.01} &     \bftab{0.02} &     \bftab{0.03} &     0.05 &     0.15 &     0.55 &     1.74 &      5.31&32.34  \\
+	\verb|O|&Lyndon  &     0.02 &     0.03 &     0.05 &     0.14 &     0.34 &     1.21 &     3.26 &     10.18 &     30.46&95.98 \\
+	\verb|O|&\rlap{standard} &     0.02 &     0.03 &     0.05 &     0.15 &     0.36 &     1.25 &     3.38 &    10.80 &     32.89&{107.35}\\
+	\verb|S|&Lyndon  &     0.02 &     0.03 &     0.06 &     0.12 &     0.20  &     0.37 &     0.70 &     \bftab 1.41 &      \bftab 2.87&{\bftab 6.01} \\
+	\verb|S|&\rlap{standard} &     0.02 &     0.04 &     0.06 &     0.11 &     0.21 &     0.37 &     0.70 &     1.43 &       2.92&6.15 \\
+	\verb|esig|&\rlap{standard}      &     0.73 &     1.61 &     3.71 &     8.52 &    19.26 &    43.66 &    98.47 &   224.83 &    506.25&\llap{1132.24}\\
+	\hline
+\end{tabular}
+	\caption[2d log signature calculation timings]{\label{tab:logsigtiming2d}Various log signature calculation timings in seconds, for 1000 random 2-dimensional paths of 100 steps each for the given levels}%($d$,$m$) combinations}
+\end{center}
+\end{table}
+\begin{figure}[H]
+\begin{center}
+	\includegraphics[width=4.387in]{"perfsweeps2d"}
+	\caption[2d log signature calculation timings]{\label{fig:logsigtiming2d}Various log signature calculation timings in seconds, for 1000 random 2-dimensional paths of 100 steps each for various levels. For \ii, only the Lyndon basis is shown.}
+\end{center}
+\end{figure}
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{rlHHrrrrrrrr}
+	\hline
+%	&basis              &   (2, 2) &   (2, 3) &   (2, 4) &   (2, 5) &   (2, 6) &   (2, 7) &   (2, 8) &   (2, 9) &   (2, 10) & (2,11)\\
+&level:&2&3&4&5&6&7&8&9&10\\
+	\hline
+\verb|C|    & Lyndon   & \bftab 0.01 & \bftab 0.01 & \bftab 0.01 & \bftab 0.02 & \bftab 0.08 & \bftab 0.45 & 4.35        & 40.80       & 221.41       \\
+ \verb|C|    & standard & 0.01        & 0.01        & 0.01        & 0.02        & 0.09        & 0.50        & 5.36        & 47.11       & 255.75       \\
+ \verb|O|    & Lyndon   & 0.01        & 0.01        & 0.03        & 0.11        & 0.51        & 2.76        & 14.67       & 84.04       & 466.12       \\
+ \verb|O|    & standard & 0.01        & 0.01        & 0.02        & 0.12        & 0.53        & 2.98        & 16.50       & 101.06      & 605.05       \\
+ \verb|S|    & Lyndon   & 0.01        & 0.02        & 0.03        & 0.05        & 0.15        & 0.46        & \bftab 1.52 & \bftab 5.38 & \bftab 19.25 \\
+ \verb|S|    & standard & 0.01        & 0.02        & 0.03        & 0.05        & 0.15        & 0.51        & 1.92        & 8.36        & 41.06        \\
+ \verb|esig| & standard & 0.13        & 0.42        & 1.54        & 5.59        & 22.69       & 86.24       & 338.08      & 1310.86     & 5451.14      \\
+	\hline
+\end{tabular}
+	\caption[3d log signature calculation timings]{\label{tab:logsigtiming3d}Various log signature calculation timings in seconds, for 1000 random 3-dimensional paths of 10 steps each for the given levels}%($d$,$m$) combinations}
+\end{center}
+\end{table}
+\begin{figure}[H]
+\begin{center}
+	\includegraphics[width=4.387in]{"perfsweepsLength10-3d"}
+	\caption[3d log signature calculation timings]{\label{fig:logsigtiming3d}Various log signature calculation timings in seconds, for 1000 random 3-dimensional paths of 10 steps each for various levels. For \ii, only the Lyndon basis is shown.}
+\end{center}
+\end{figure}
+\iffalse
+\begin{tabular}{ >{\bfseries} l rrrrrr}
+	\hline
+	\multicolumn{6}{c}{Time (s) for 100 (log) signatures of length-\textbf{1000} paths:}\\
+	Signature   &   0.017 & 2.427 & 100.572 &2.400 & 4.935 \\
+	Compiled &     0.042 &    4.931 &  2857.072 &   3.341 & 5.845    \\
+	Projection &	0.211 &    3.285 & 123.143 & 3.297 &7.701\\
+	
+\end{tabular}
+\fi
+
+We expect the time taken to increase polynomially in dimension, so we plot the time taken for various methods as $d$ increases on a log-log plot in Figure~\ref{fig:logsigtimingm5} and show the timings in Table~\ref{tab:logsigtimingm5}. Ultimately the calculation time would be expected to be quintic in $d$. For $d$ in the high single figures, we observe much higher growth in the runtime of the compiled code.
+
+\begin{table}[H]
+\begin{center}
+%\begin{tabular}{rlrrrrrrrrrr}
+\begin{tabular}{rlHHrrrrrrr}
+\hline
+&\rlap{dimension:}&2&3&4&5&6&7&8&9&10\\
+\hline
+ \verb|C|    & Lyndon   & \bftab 0.01 & \bftab 0.02 & \bftab 0.09 & \bftab 0.29 & 0.85        & 3.17        & 7.24        & 22.33       & 37.83       \\
+ \verb|C|    & standard & 0.01        & 0.02        & 0.10        & 0.30        & 1.03        & 3.35        & 7.58        & 21.64       & 38.38       \\
+ \verb|O|    & Lyndon   & 0.02        & 0.11        & 0.51        & 1.63        & 4.18        & 9.34        & 20.76       & 39.39       & 63.67       \\
+ \verb|O|    & standard & 0.02        & 0.12        & 0.52        & 1.69        & 4.38        & 9.84        & 19.72       & 38.44       & 64.92       \\
+ \verb|S|    & Lyndon   & 0.03        & 0.05        & 0.14        & 0.37        & \bftab 0.84 & \bftab 1.73 & \bftab 3.24 & \bftab 5.66 & \bftab 9.30 \\
+ \verb|S|    & standard & 0.03        & 0.05        & 0.15        & 0.41        & 0.96        & 2.02        & 4.56        & 6.81        & 11.60       \\
+ \verb|esig| & standard & 0.93        & 5.59        & 22.75       & 73.17       & 190.47      & 437.35      & 931.58      & \llap{1}814.74     &             \\
+\hline
+\end{tabular}
+	\caption[Level 5 log signature calculation timings]{\label{tab:logsigtimingm5}Various level-5 log signature calculation timings in seconds, for 1000 random paths of 10 steps each of various dimensions.}
+\end{center}
+\end{table}
+
+
+\begin{figure}[H]
+\begin{center}
+	\includegraphics[width=4.387in]{"perfsweeps_level5loglog"}
+	\caption[Level 5 log signature calculation timings]{\label{fig:logsigtimingm5}Various level-5 log signature calculation timings in seconds, for 1000 random paths of 10 steps each of various dimensions. For \ii, only the Lyndon basis is shown. The graphs look to have roughly reached a straight line for $d\ge6$. The least squares line of each is shown, with its gradient which indicates the approximate degree of a polynomial relationship.}% For \verb|esig|, the $d=10$ does not calculate.}
+\end{center}
+\end{figure}
+%The time taken for \verb|prepare| is small (under 2 seconds) in all these cases, except for the case where $d=3$ and $m=10$ case.
+%For projecting from the signature, this took about 2.5s for either basis, and for direct calculation (which is not the default in this case) it took about 8 minutes for the Lyndon basis and about 9 minutes for the standard Hall basis.
+The preparation in \ii\ is slow for the \verb|C| method when $d$ or $m$ is large. Timings for a single call are illustrated for various levels with $d=3$ in Figure~\ref{fig:preptiming3d} and for various dimensions with $m=5$ in Figure~\ref{fig:preptimingm5}. There is an advantage in using the Lyndon basis.
+\begin{figure}[H]
+\begin{center}
+	\includegraphics[width=4.387in]{"prepsweepsLength10-3d"}
+	\caption[3d log signature preparation timings]{\label{fig:preptiming3d}Timings for a single preparation of the 3-dimensional log signature calculation for various levels. Smaller marks are used for the standard Hall basis, regular marks for the Lyndon basis. Values for \texttt{O} and \texttt{C} are very similar, so the former are omitted. Very small values are also omitted.}
+\end{center}
+\end{figure}
+\begin{figure}[H]
+\begin{center}
+	\includegraphics[width=4.387in]{"prepsweeps_level5"}
+	\caption[Level 5 log signature preparation timings]{\label{fig:preptimingm5}Timings for a single preparation of the level-5 log signature calculation for various dimensions. Only the Lyndon basis is shown. Smaller marks are used for the standard Hall basis, regular marks for the Lyndon basis. Values for \texttt{O} and \texttt{C} are very similar, so the former are omitted. Very small values are also omitted.}
+\end{center}
+\end{figure}
+
+While there is always more that can be done to speed software performance, \ii\ provides a significant speedup over other options easily available to those using python for machine learning and doing lots of signature calculations.
+\iffalse
+\begin{tabular}{ >{\bfseries} l rrrrrr}
+	\multicolumn{6}{c}{Time (s) for a single call of the preparation function:}\\
+	Compiled     &   0.107 &    0.805 &  439.38  &   0.372 & 1.466    \\
+	Projection     &   0.001 &    0.037 &    4.386 &   0.103 & 0.156    \\
+	% prepare(1 evaluation) &   0.102 &   0.105 &    1.297 & 1359.791 &   0.482 & 1.59     \\ %{\small (1 evaluation of iisignature.prepare)} & 
+	\hline
+\end{tabular}
+\fi
+\section{Indicative memory usage}\label{sec:mem}
+We used the Massif tool \cite{massif} from Valgrind to profile memory usage calculating a single log signature, in particular collecting the peak memory usage. The peak memory usage is interesting because running out of memory is usually what makes certain calculations impossible. There is a background memory cost independent of the algorithm, which includes space to store the BCH coefficients. In order just to measure the algorithm, we ran these calculations from within \CC\ without using Python, and we subtract the memory usage calculating the same signature at level 1 from the observed memory usage. 
+
+The values are very consistent across repeated runs. Values for three-di\-men\-sion\-al paths are shown in Figure~\ref{fig:logsigmem3d}. We observe that memory usage is another reason why the projection method becomes a better choice for higher levels. %In the specific case of a two dimensional path at level 10, we cannot explain why the \verb|C| method requires so much less memory than the general trend would predict. We suspect this is an artifact of complicated allocator behaviour.
+
+%\begin{figure}[H]
+%	\begin{center}
+%	\includegraphics[width=4.387in]{"memsweep2d"}
+%		\caption{\label{fig:logsigmem2d}Memory usages in bytes for \texttt{C} and \texttt{S} calculations of a two-dimensional path of 10 steps for various levels. Only the Lyndon basis is shown.}
+%	\end{center}
+%\end{figure}
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=4.387in]{"memsweep3d"}
+		\caption[Log signature memory usages]{\label{fig:logsigmem3d}Memory usages in bytes for \texttt{C} and \texttt{S} calculations of a three-dimensional path of 10 steps for various levels. Only the Lyndon basis is shown.}
+	\end{center}
+\end{figure}
+
+\begin{comment}
+Using the \verb|S| method, the major memory user is the projection matrix which is stored in the prepared object. Assuming the stored matrices are stored square (even though they are known to be triangular) the total size of matrices  -- one for each anagram set -- for the projection at level $m$ using $d$ dimensions can be given as a simple sum for the Hall and Lyndon cases.
+\begin{align*}
+A_{m,d}^{\text{Hall}}&:=\sum_{n_1+\dots+n_d=m}\lyn{m}{n_1,\dots,n_d}\frac{m!}{n_1!\dots n_d!}&A_{m,d}^{\text{Lyndon}}&:=\sum_{n_1+\dots+n_d=m}\lyn{m}{n_1,\dots,n_d}^2
+\\&=\sum_{n_1+\dots+n_d=m}\frac1m\sum_{\dummycommonfactor|n_i}\frac{\mu(\dummycommonfactor) (\frac{m}{\dummycommonfactor})!}{(\frac{n_1}{\dummycommonfactor})!\dots(\frac{n_d}{\dummycommonfactor})!}\frac{m!}{n_1!\dots n_d!}
+&&=\sum_{n_1+\dots+n_d=m}\left[\frac1m\sum_{\dummycommonfactor|n_i}\frac{\mu(\dummycommonfactor) (\frac{m}{\dummycommonfactor})!}{(\frac{n_1}{\dummycommonfactor})!\dots(\frac{n_d}{\dummycommonfactor})!}\right]^2
+\intertext{which grows like a polynomial in $d$ and exponentially in $m$. The following approximation, which takes 1 to be the only value of $\dummycommonfactor$, and which is exact if $m$ is prime, links these sizes to sums of squared multinomial coefficients}
+A^{\text{Hall}}_{m,d}&\approx\frac1m\sum_{n_1+\dots+n_d=m}\left(\frac{m!}{n_1!\dots n_d!}\right)^2&A^{\text{Lyndon}}_{m,d}&\approx\frac1{m^2}\sum_{n_1+\dots+n_d=m}\left(\frac{m!}{n_1!\dots n_d!}\right)^2.
+%\intertext{and, to leading order in fixed $d$ as $m$ increases, using the calculations of %\cite{AbelianSquaresSE}, we get}
+%A^{\text{Hall}}_{m,d}&\approx (m-1)! d^m &A^{\text{Lyndon}}_{m,d}&\approx \frac{(m-1)!}{m}d^m.
+\end{align*}
+Asymptotic behaviour of these values as $m$ increases is considered in \cite{AbelianSquaresSE}, but taking the first one or two terms is not accurate enough for estimating memory usage for realistic $m$ and $d$.
+\end{comment}
+
+\iffalse
+\section{Other functionality}\label{sec:other}
+We have described the core functionality of \ii, the calculation of signatures and log signatures. There is also a simple method \verb|sigjoin| for concatenating a segment onto a signature, and \verb|sigscale| for transforming a given signature according to the path being scaled by an enlargement in each of the coordinate directions. 
+\fi
+
+\section{Conclusions and future work on iisignature}
+\label{sec:iisigConcl}
+
+We have presented and analysed efficient methods for computing signatures and log signatures. %For log signatures, there is a tradeoff between 
+We have implemented what we considered to be the most promising algorithms.
+%There are other methods for converting the expanded log signature to a basis which we have not implemented, %because we expect they clearly require more computational effort than what we have described. 
+%for example the map given by the Dynkin-Specht-Wever lemma directly (\cite{DSWLemma}), which requires more operations. 
+%Theorem~5.3 of \cite{FLA} gives an algorithm for calculating the dual basis of the Poincar\'e-Birkhoff-Witt basis of tensor space. If we had an efficient implementation of that, we could use the duals of the Lie elements of that basis to do the projection, but we don't yet. %IS THIS RUBBISH
+%ALSO CHECK Lyndon signature as a total alternative
+
+We have focused on small-dimensional data in our design, because this encompasses many applications where the signature has been used in machine-learning. For example handwriting recognition and EEG data.
+Calculating the log signature in cases where $d\gg m$ has not been a priority. For example $d>50$ and $m\le4$. Some data is naturally a high-dimensional sequence, possibly discrete (making movements of a fixed length in a single dimension at a time), like some representations of music and text, so this is a possible use case. In these cases there is lots of repetition in the calculations. There are potential changes to the code which would make \verb|prepare| use significantly less memory (and therefore be usable for larger $d$) in this regime, at the cost of a little more calculation time in \verb|logsig|.
+
+We have shown that machine code generation directly from the algebra is useful in this domain.
+The calculation is data-access heavy and the order of operations has a big effect, because of memory latency and data dependencies, and there is scope to improve it. We find that adding extra operations to the code without changing the data access does not slow it down, suggesting that it is the effect of data-cache misses which is the main bottleneck. There are subsets of the calculation which are repeated on different parts of the data. Operating in parallel with vector instructions might speed things up.
+There are avenues for working on these possibilities, for example using the LLVM system, which brings the advantages of a modern compiler to the code generation. 
+\endDocumentJR

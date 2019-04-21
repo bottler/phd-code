@@ -1,0 +1,11 @@
+\ifx\headerIncludedJR\undefined
+  \documentclass[11pt,a4paper]{article}
+  \setlength{\textwidth}{5.50in}
+  \input{header}
+  %this cannot be in header.tex as it messes up
+  %the thesis copyright page
+  \def \alph#1{{\color{bluee}\mathbf{#1}}}
+  \begin{document}
+  \tableofcontents
+  \def\endDocumentJR{\printindex \printbibliography[heading=bibintoc]\end{document}}
+\fi

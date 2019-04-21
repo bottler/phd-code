@@ -1,0 +1,306 @@
+\input{outerheader}
+%\section{Areas of areas}
+%\label{sec:aoa}
+To signature elements $\phi$ and $\psi$,   we can associate paths $t\mapsto\langle \phi, X^\gamma_{0,t} \rangle$ and $t\mapsto\langle \psi, X^\gamma_{0,t} \rangle$ given a path $\gamma$ in $\mathbb{R}^d$.
+Then we can consider the signed area of the 2D path whose parametric coordinates are the values of these signature elements.
+\begin{align*}
+  \Area(f,g) &:= \int df dg - \int dg df \jindmath{\Area}{Area}\\
+  f_t &= \langle \phi, X^\gamma_{0,t} \rangle \\
+  g_t &= \langle \psi, X^\gamma_{0,t} \rangle.
+\end{align*}
+We will shortly define an operation $\area$ with the following property, and consider its properties.
+\begin{align*}
+  \Area(f,g)_t = \langle \area(\phi,\psi), X^\gamma_{0,t} \rangle.
+\end{align*}
+%This is what leads us to consider the properties of $\area$. 
+In particular, if we start with the single letters %words $\alph1$ and $\alph2$
+ and apply $\area$ between the terms we have, what elements of the signature can we span -- alternatively, how much of the tensor algebra $T(\R^d)=\R\langle\Sigma\rangle$ can we span?
+
+\begin{definition}
+  Given two words/monomials $\phi$ and $\psi$, where $\psi$ is not the empty word, and where the letters in $\psi$ are given by $\psi=\psi_1\dots\psi_m$, their \emph{right half shuffle} is % (the latter assumed to be of order $m$)
+\begin{align*}
+  \hs{\phi}{\psi} := (\phi \shuffle \psi_1..\psi_{m-1}) \psi_m.\jindmath{\hssymbol}{>}
+\end{align*}
+This is extended bilinearly to polynomials $\phi$ and $\psi$, as long as $\langle\emptyword,\psi\rangle=0$. \footnote{The special case of the empty word $\emptyword$ is a bit of a pain but not enlightening. We do not need it here.}
+\end{definition}
+For example, $\hs{\alph{12}}{\alph3}=\alph{123}$, $\hs{\alph{3}}{\alph{12}}=\alph{312}+\alph{132}$ and $\hs{\alph{1}}{\alph1}=\alph{11}$.
+Note that the symmetrization of $\hssymbol$ gives the shuffle product
+\begin{align*}
+  \hs{a}{b}+\hs{b}{a} = a \shuffle b,
+\end{align*}
+which is why $\hssymbol$ is called \emph{half-shuffle}.% \cite{bib:FP103}.
+
+Now for monomials $\phi,\psi,\xi$ of order $n_\phi, n_\psi, n_\xi$,
+\begin{align*}
+  \hs{(\hs{\phi}{\psi})}{\xi}
+  +
+  \hs{(\hs{\psi}{\phi})}{\xi}
+  &=
+  \hs{\phi}{(\hs{\psi}{\xi})}.
+\end{align*}
+So nonempty words with $\hssymbol$ form a (left)
+Zinbiel algebra.% \cite[Section 7]{bib:Lod2001}, \cite{bib:Kaw2009}.
+%$\hssymbol$ is known as $*$ in \cite{Kawski2011} 
+In fact, they generate the free Zinbiel algebra on $\R^d$, see Theorem~1.8 of \cite{LodayCup} or section 7 of \cite{Dialgebras}.
+This is in fact shown around page~19 of~\cite{schutzenberger}, where $a\mathbin\top b$ is effectively our $\hs{b}{a}$, $\overline\top$ becomes the shuffle product, and all words are reversed.
+
+It is clear that starting from single letters and using $\hssymbol$ every nonempty word can be made, because concatenating a letter $l$ onto the end of a word $w$
+ is the same as $\hs{w}{l}$. 
+
+We are interested in the anti-symmetrization of $\hssymbol$.
+%
+\begin{definition}
+Define
+\begin{align*}
+  \area(a,b) := \hs{a}{b}-\hs{b}{a}.\jindmath{\area}{area}
+\end{align*}
+\end{definition}
+\begin{remark}
+  The operation $\area$ is anti-commutative but it is \emph{not} a Lie product, since it does not satisfy the Jacobi identity.
+  Indeed,
+  \begin{align*}
+    \area(\alph1,\area(\alph2,\alph3))
+    &=
+    \area(\alph1, \alph{23} - \alph{32}) \\
+    &=
+    \alph{123} + \alph{213} - \alph{132} - \alph{312} - \alph{231} + \alph{321},
+  \end{align*}
+  but
+  \begin{align*}
+    \area(\area(\alph1,\alph2),\alph3) + \area(\alph2,\area(\alph1,\alph3))
+    =
+    2 \alph{123} - 2 \alph{132}.
+  \end{align*}
+\end{remark}
+
+\iffalse
+\begin{definition}
+  For a set $X \subset T(\R^d)$, define the shuffle closure of $X$ as
+  \begin{align*}
+    \overline{ X }^\shuffle
+    :=
+    \{ a_1 \shuffle .. \shuffle a_n : n \ge 1, a_i \in X \},
+  \end{align*}
+  the smallest set containing $X$ that is closed under shuffles.
+\end{definition}
+%DELETE ME
+\fi
+
+\begin{definition}
+  Define
+  \begin{align*}
+    P^{(1)} &:= \Sigma=\{ \alph1,\dots,\alph{d} \} \\
+    P^{(n+1)} &:= \{ \area(\phi,\psi) : \phi, \psi \in \bigcup_{i=1}^n P^{(i)} \} \\
+    P &:= \bigcup_{n=2}^\infty P^{(n)}.\jindmath{P}{P}
+  \end{align*}
+\end{definition}
+This $P$ is everything you can get with the $\area$ operation, the areas-of-areas, and it is the subject of our interest.
+
+%\subsection{Linear span of \texorpdfstring{$P$}{P}}
+\section{Linear span of \texorpdfstring{$P$}{P}: upper bound}
+\label{sec:aoaLinearU}
+\begin{definition}
+  \label{def:A}\jindmath{A_d}{Ad}
+Let $A_d$ be those elements of $T(\R^d)$ which can be written as a concatenation of some element $x\in\TS$ and $(ij-ji)$ for $i,j\in\{\alph1,\dots,\alph{d}\}$.
+\end{definition}
+For example, $A_2$ contains $(3\alph1-\alph{12})(\alph{12}-\alph{21})=3\alph{112}-3\alph{121}+\alph{1221}-\alph{1212}$ but it does not contain $\alph{1112}$.
+The order of the choice of $i$ and $j$ only affects sign, and to get a nonzero element $i$ must not equal $j$.
+If $m\ge2$ then level $m$ is a $d^m$-dimensional space and the elements of $A_d$ in level $m$ form a $d^{m-2}\binom{d}{2}$-dimensional subspace.
+%We prove that the linear span of $P$ is $A_d$ over this section and the next.
+
+%\iffalse
+\begin{conjecture}\label{conj:span}
+%\begin{align*}
+$\spann P=A_d$.
+%\end{align*}
+\end{conjecture}
+%\autoref{conj:span} looks right by computer experiment -- for $d=2$ it matches up to level 18. 
+Intuitively, $\spann P$ is subspace of tensor space constructed from letter building blocks and a slightly weird nonassociative operation, whilst $A_d$ is a simple algebraic description of a subspace. This conjecture would explain the nature of the former in a nice way. It is a bit like the way a Hall basis explains the nature of the  free Lie algebra, which is everything you can get from letter building blocks and the Lie bracket operation, but the content of the answer is simpler.
+The result of this section is one direction of \autoref{conj:span}. %the conjecture. %We further conjecture that the span of l
+In the next section we prove the conjecture for the case $d=2$.\footnote{The preprint \cite{DIM}, which was submitted to ArXiv just before I submitted this thesis, appears to prove this conjecture in general, using a different argument. I was not aware of it when working on this.}
+%\fi
+
+\begin{lemma}
+	Let $i$, $j$, $k$ and $l$ be letters. If $X=x(ij-ji)$ and $Y=y(kl-lk)$, then $\area(X,Y)\in A_d$.
+\end{lemma}
+\begin{proof} We have
+	\begin{align*}
+	\area(X,Y)
+	&=\hs{X}{y(kl-lk)}-\hs{Y}{x(ij-ji)}
+	\\&=(X\shuffle yk)l-(X\shuffle yl)k-(Y\shuffle xi)j+(Y\shuffle xj)i
+        \\&=(X\shuffle y)kl+(xi\shuffle yk)jl-(xj\shuffle yk)il
+        \\&\qquad-(X\shuffle y)lk-(xi\shuffle yl)jk+(xj\shuffle yl)ik
+        \\&\qquad-(Y\shuffle x)ij-(yk\shuffle xi)lj+(yl\shuffle xi)kj
+          \\&\qquad+(Y\shuffle x)ji+(yk\shuffle xj)li-(yl\shuffle xj)ki
+          \\&=(X\shuffle y)(kl-lk)-(Y\shuffle x)(ij-ji)
+              \\&\qquad+(xi\shuffle yk)(jl-lj)-(xi\shuffle yl)(jk-kj)
+          \\&\qquad+(xj\shuffle yl)(ik-ki)-(xj\shuffle yk)(il-li)
+              \\&\in A_d.\qedhere
+	\end{align*}
+\end{proof}
+\begin{lemma}
+  \label{lemma:inAd1}
+	If $X,Y\in A_d$, then $\area(X,Y)\in A_d$.\
+\end{lemma}
+\begin{proof}
+  $X$ and $Y$ are linear combinations of expressions to which the previous lemma can be applied.
+\end{proof}
+
+The letters are not in $A_d$,
+but bracketing with them is also fine:
+\begin{lemma}
+  If $X\in A_d$ and $k\in\{\alph1,\dots,\alph d\}$, then $\area(k,X)$ and $\area(X,k)$ are in $A_d$.
+  \label{lemma:inAd}
+\end{lemma}
+
+\begin{proof}
+  $X$ is the sum of terms like $x(ij-ji)$ where $i$ and $j$ are letters.
+  For such a term
+  \begin{align}
+    \area(x(ij-ji),k)&=\hs{(xij-xji)}{k}-\hs{k}{(xij-xji)}\nonumber
+    \\&=xijk-xjik-(k\shuffle xi)j+(k\shuffle xj)i\nonumber
+    \\&=xijk-xjik-xikj-(k\shuffle x)ij+xjki+(k\shuffle x)ji\nonumber
+    \\&=xi(jk-kj)+xj(ki-ik)+(k\shuffle x)(ji-ij)\label{eq:newAreaLetter}
+        \\&\in A_d\nonumber
+  \end{align}
+  $\area(X,k)$ being in $A_d$ follows because $\area$ is linear. $\area(k,X)$ is minus $\area(X,k)$ and so is also in $A_d$ which is a subspace.
+\end{proof}
+
+\begin{theorem}
+\label{thm:aoaUpper}
+%\begin{align*}
+$\spann P\subset A_d$
+%\end{align*}
+\end{theorem}
+
+\begin{proof}
+  $P^{(2)}$ is exactly areas between pairs of letters, which are of the form $ij-ji$. These are in level $2$ of $A_d$.
+Other elements of $P$ are formed either as the $\area$ between two lower level elements of $P$ or the $\area$ between a letter and a lower level element of $P$. 
+These are all in $A_d$ by induction, using \autoref{lemma:inAd1} and \autoref{lemma:inAd}.
+Thus $P\subset A_d$, and because $A_d$ is a vector space, $\spann P\subset A_d$.
+\end{proof}
+We conjecture further that the span of left-bracketed areas of areas is the same as all areas of areas, which we show to be the case for $d=2$ in the next section.
+
+%\section{Linear span of \texorpdfstring{$P$}{P}: lower bound}
+\section{Linear span of \texorpdfstring{$P$}{P}: two-dimensional case}
+\label{sec:aoaLinear2d}
+We restrict attention in this section to the $d=2$ case, 
+and show that the linear span of $P$ is in fact the whole of $A_2$.
+In fact, the linear span of just the area expressions which are wholly nested is the whole of $A_2$.
+Aside from swapping the order in the innermost bracket, which must contain a $\alph1$ and a $\alph2$, such nested area expressions are linearly independent.
+
+I use the permutation convention under which ``do $(13)$ and then do $(12)$'' is $(12)(13)=(132)$, 
+and I denote the identity permutation by $\id$.
+%\begin{definition}
+If $b$ is an element of the group algebra $\R S_n$ and $\sigma\in S_n$ then 
+I denote the coefficient of $\sigma$ in $b$ as
+% $b_\sigma$. %Is this standard. Is 
+$b(\sigma)$.
+%\end{definition}
+
+\begin{lemma}
+  Let $n$ be a  positive integer, and consider the following element of $\R S_n$, the group algebra of the symmetric group.
+  \begin{equation}
+    \label{eq:phi}
+    \phi_n=2\id+(21)+(321)+\dots+(n\dots 1)\jindmath{\phi_n}{phi}
+  \end{equation}
+  Then $\phi_n$ is a unit, 
+i.e.~there exists an element $\phi_n^{-1}$ such that $\phi_n\phi_n^{-1}=\phi_n^{-1}\phi_n=\id$.
+\end{lemma}
+In particular, if $f$ is a function from permutations to a real vector space,
+\begin{align}
+  \sum_{\sigma'\in S_n}\phi_n^{-1}(\sigma')\sum_{\sigma\in S_n}\phi_n(\sigma)f(\sigma'\sigma)=f(\id).\label{eq:interpretInverse}
+\end{align}
+The proof of this was explained to me in detail by Darij Grinberg in \cite{GroupAlgMO}.
+In fact, all the values of $\phi_n^{-1}$ are rational and so the Lemma can be stated and proved just the same for $\Q S_n$ instead of $\R S_n$, but we do not need this strengthening.\footnote{I used the GAP computer algebra system to test some of this out, where working with $\Q S_n$ is the sensible way to proceed. That is why I asked the question in that setting.}
+\begin{proof}
+The element $\psi_n:=(\phi_n-\id)$ of $\R S_n$ is considered in many places, being known by such names as the \emph{top-to-random shuffle},
+or the (transition matrix of the) \emph{Tsetlin library}.
+The eigenvalues of $\psi_n$ (i.e.~of the linear map from $\R S_n$ to itself defined by multiplication by $\psi_n$) are known to be $0, 1,\dots,n-2,n$; for example they are specified in Theorem~2.2 of \cite{Garsia}.
+This goes back to \cite{TopToRandom}.
+Since these eigenvalues of $\psi_n$ do not include $-1$, the eigenvalues of multiplication by $\phi_n=\id+\psi_n$ do not include 0, and so the multiplication is a linear endomorphism of $\R S_n$. This means that $\phi_n$ must be a unit.
+% The result may first have appeared in .  
+\end{proof}
+
+For example, $\phi_2^{-1}=\frac13[2e-(12)]$ and $\phi_3^{-1}=\frac18[5e+(23)-3(12)-3(132)+(123)+(13)]$.
+%The use of rationals rather than reals in this Lemma makes it a stronger statement. Our theorem is about real vector spaces.
+
+\begin{definition}
+If $w=l_1\dots l_k$ is a word, we define $\areab{w}$ to be the left-bracketing expression\index{areab@$\areabb$}
+\begin{align}
+\area(\dots\area(\area(\area(l_1,l_2),l_3),l_4),\dots,l_k).
+\end{align}
+%This is expanded linearly to an operation on the tensor algebra. %no need
+\end{definition}
+
+\begin{theorem}
+\label{thm:aoa2d}
+For $k$ a nonnegative integer,
+the linear span of the elements $\areab{\alph1\alph2w}$ 
+where $w$ ranges over words in $\{\alph1,\alph2\}$ of length $k$
+is the whole of level $k+2$ of $A_2$,
+that is the span of elements $v(\alph1\alph2-\alph2\alph1)$ 
+where $v$ also ranges over words in $\{\alph1,\alph2\}$ of length $k$.
+\end{theorem}
+\begin{proof}
+For $k=0$, this is clear because $\areab{\alph1\alph2}=\alph1\alph2-\alph2\alph1$. 
+Assume the statement is true for all $k\le n$.
+
+Let $wj_1=j_{n+1}j_n..j_2j_1$ be a word of length $n+1$. %and let $i=j_1\in\{\alph1,\alph2\}$, 
+We see from \eqref{eq:newAreaLetter} that
+\begin{align}
+  \area(w(\alph1\alph2-\alph2\alph1),j_1)&=-(wj_1+j_1\shuffle w)(\alph1\alph2-\alph2\alph1)\nonumber
+\\&=-(2wj_1+\hs{j_1}{w})(\alph1\alph2-\alph2\alph1)
+\end{align}
+In other words,
+\begin{align}
+  \area(j_{n+1}.. j_2(\alph1\alph2-\alph2\alph1),j_1)
+  %&=-(2wj_1+\hs{j_1}{w})(\alph1\alph2-\alph2\alph1)\nonumber
+&=-\big(2j_{n+1}..j_1+\hs{j_1}{j_{n+1}..j_2}\big)(\alph1\alph2-\alph2\alph1)\nonumber
+\\&=-\big(\sum_{\sigma\in S_{n+1}}\phi_{n+1}(\sigma)j_{\sigma(n+1)}\dots j_{\sigma(1)}\big)(\alph1\alph2-\alph2\alph1)
+\end{align}
+%Summing both sides for $j_1.. j_{n+1}$ taking values $j_{\sigma'(1)}..j_{\sigma'(n+1)}$ where $\sigma'$ varies over $S_{n+1}$ with weights in $\phi_{n+1}^{-1}$ and negating both sides gives
+Summing both sides with each $j_l$ replaced by $j_{\sigma'(l)}$ where $\sigma'$ varies over the weighted permutations in $\phi_{n+1}^{-1}$, and negating both sides, gives
+\begin{align}
+  -&\sum_{\sigma'\in S_{n+1}}\phi_{n+1}^{-1}(\sigma')\area(j_{\sigma'(n+1)}\dots j_{\sigma'(2)}(\alph1\alph2-\alph2\alph1),j_{\sigma'(1)})\nonumber
+\\&=\sum_{\sigma'\in S_{n+1}}\phi_{n+1}^{-1}(\sigma')\big(\sum_{\sigma\in S_{n+1}}\phi_{n+1}(\sigma)j_{\sigma'(\sigma(n+1))}\dots j_{\sigma'(\sigma(1))}\big)(\alph1\alph2-\alph2\alph1)\nonumber
+\\&=\sum_{\sigma'\in S_{n+1}}\phi_{n+1}^{-1}(\sigma')\big(\sum_{\sigma\in S_{n+1}}\phi_{n+1}(\sigma)j_{(\sigma'\sigma)(n+1)}\dots j_{(\sigma'\sigma)(1)}\big)(\alph1\alph2-\alph2\alph1)\nonumber
+\intertext{(using \eqref{eq:interpretInverse})}
+&=j_{n+1}..j_1(\alph1\alph2-\alph2\alph1)=wj_1(\alph1\alph2-\alph2\alph1).\nonumber
+\end{align}
+We have written the generic basis element $wj_1(\alph1\alph2-\alph2\alph1)$ of level $n+3$ of $A_2$ as a linear combination of elements $\area(v,j_1)$ for $v$ in level $n+2$ of $A_2$ and $j_1\in\{\alph1,\alph2\}$. By hypothesis, any such $v$ is in the span of left-bracketed areas. Thus our generic basis element of level $n+3$ of $A_2$ is in the span of left-bracketed areas and the statement is true for $k=n+1$.
+\end{proof}
+
+In summary, for the $d=2$ case, within each level, we have the combined inclusions 
+\begin{align*}
+	%\spann \{\text{area expressions}\}=:
+	\spann P\overbrace{\subset}^{\text{\clap{\autoref{thm:aoaUpper}}}} A_2\underbrace{=}_{\text{\clap{\autoref{thm:aoa2d}}}}\spann\{\areab{\alph1\alph2w}\mid w\text{ word}\}\overbrace{\subset}^{\text{\clap{trivial}}}\spann P
+\end{align*}
+so $A_2$ \emph{is} $\spann P$, the span of all area expressions, and we have that these left-bracketed area expressions form a basis.
+
+\iffalse %general case, doesn't work
+%Proving this lemma is why $\phi_k$ was chosen, it works because it fits \eqn
+\begin{lemma}
+  Let $k>1$ and let $\mathcal{A}_k=\{l_1,\dots,l_k\}$ be a set of distinct letters.
+For a set of letters $\mathcal{B}$, let $W(\mathcal{B})$ be the set of words containing one of each letter.
+Let $O$ be the set of permutations of $1,\dots,k$ for which $\sigma(1)<\sigma(2)$.
+Then the elements $\areab{l_{\sigma(1)}\dots l_{\sigma(k)}}$, for $\sigma\in O$,
+ are linearly independent in level $k$ of the tensor algebra on $l_1,\dots,l_k$. %By dimension counting, 
+In other words, their span is the span of those elements which are $x(l_al_b-l_bl_a)$
+where $x$ is a word from  $W(\mathcal{A}_k-\{l_a,l_b\})$ for some $a$ and $b$ in $\{1,\dots,k\}$. 
+\end{lemma}
+\begin{proof}
+  For $k=2$ there is only one $\sigma$ in $O$, so the result is clear. 
+Assume the result is true for $k=n-1$. 
+%Let $a$$x(l_al_b-l_bl_a)$ 
+Consider the map from $\spann W(\mathcal{A}_n)$ to itself defined by
+\begin{equation}
+f(\areab{w}l)=\areab{wl}.
+\end{equation}
+$f$ is well defined because, by assumption, $\areabb$ on words $w$ of length $n-1$ is an
+\end{proof}
+\fi %general case
+%We conjecture further that the span of left-bracketed areas of areas is the same as all areas of areas.
+
+%\subsection{Shuffle closure of \texorpdfstring{$P$}{P}}
+\endDocumentJR

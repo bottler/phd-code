@@ -1,0 +1,323 @@
+% warwickthesis.tex modified by M Hadley from utthesis.doc  Sept 96
+% Significant changes were made in 2009, first to work seemlessly with pdflatex
+% and secondly to use the setspace package to control linespacing -
+% removing some incompatibilities that existed before.
+% any comments or problems - contact me  <m.j.hadley@warwick.ac.uk>
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%
+%%% File: utthesis.doc, version 2.0, January 1995
+%%% =============================================
+%%% Copyright (c) 1995 by Dinesh Das.  All rights reserved.
+%%% This file is free and can be modified or distributed as long as
+%%% you meet the following conditions:
+%%%
+%%% (1) This copyright notice is kept intact on all modified copies.
+%%% (2) If you modify this file, you MUST NOT use the original file name.
+%%%
+%%% This file contains a template that can be used with the package
+%%% utthesis.sty and LaTeX2e to produce a thesis that meets the requirements
+%%% of the Graduate School of The University of Texas at Austin.
+%%%
+%%% All of the commands defined by utthesis.sty have default values (see
+%%% the file
+%           warwickthesis.sty
+%%%                        for these values).  Thus, theoretically, you
+%%% don't need to define values for any of them; you can run this file
+%%% through LaTeX2e and produce an acceptable thesis, without any text.
+%%% However, you probably want to set at least some of the macros (like
+%%% \thesisauthor).  In that case, replace "..." with appropriate values,
+%%% and uncomment the line (by removing the leading %'s).
+%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% all comments starting with %! have been added by M Hadley as
+% part of the conversion for the university of warwick
+%
+%
+%\documentclass[11pt,a4paper,twoside]{report}      %% LaTeX2e document.
+%%* Removed twoside option which is no longer accepted - you might want to use it for drafts.
+\documentclass[11pt,a4paper]{report}      %% LaTeX2e document.
+%\documentclass[11pt,a4paper,draft]{report}      %% LaTeX2e document.
+\usepackage{warwickthesis,setspace,graphicx}     %!  setspace is used to control linepacing
+%\usepackage[square]{natbib}                    %! needed for Harvard style of references.
+                                                %! for more notes see the bibliography section below
+\usepackage{enumerate}  %! used for the library form, but you might find it useful too.
+% \mastersthesis                     %% Uncomment one of these; if you don't
+% \phdthesis                         %% use either, the default is \phdthesis.
+
+%\thesisdraft                       %% Uncomment this if you want a draft
+                                     %% version; this will print a timestamp
+                                     %% on each page of your thesis.
+
+%JR: it seems best not to uncomment any of these
+
+% \leftchapter                       %% Uncomment one of these if you want
+% \centerchapter                     %% left-justified, centered or
+% \rightchapter                      %% right-justified chapter headings.
+                                     %% Chapter headings includes the
+                                     %% Contents, Acknowledgments, Lists
+                                     %% of Tables and Figures and the Vita.
+                                     %% The default is \centerchapter.
+
+%\renewcommand{\familydefault}{cmss}  %! removed April 2009 because the default times font reads more easily
+                                     %! for larger blocks of text.%!
+                                     %! Added March 2003.
+                                     %! This alternative is to use a sans serif font as in
+                                     %!  the Warwick Corporate style.
+                                     %! The default is Times, which is still acceptable.
+
+
+\onehalfspacing                      %! This is the default and gives an acceptable "double spaced" thesis
+                                     %! It is the minimum spacing accepted by the graduate school, and there is no reason to increase the spacing.
+% \singlespacing                     %! Uncomment if you want single-spacing,
+%\doublespacing                     %! uncomment if you want real double-spacing for some perverse reason.
+
+%\setlength{\textheight}{9.0in}      %! Uncomment this for a slightly
+                                     %! longer page. The default is now 8.5in (from Feb 2010)
+                                     %! regulations require page numbers to be at least 1.5cm into the page.
+                                     %! You can even try a longer page to save paper.
+
+%! Double sided printing is no longer allowed (March 2008), it caused too many problems at binding,
+                              %\setlength{\evensidemargin}{0.15in}  %! Uncomment this line for double sided printing
+                                      %! Double-sided printing has recently been
+                                      %! allowed by the Graduate School (March 2003)
+                                      %! The default is {0.7in} for single sided.
+%! Double sided printing is no longer allowed (March 2008), it caused too many problems at binding,
+
+\renewcommand{\thesisdepartmentname}{Complexity Science and Statistics}    %! The name of
+                                                  %   the department
+
+%! \renewcommand{\thesissubmission}{Submitted to the University of Warwick\\
+%!              in partial fulfilment of the requirements\\
+%!                   for admission to the degree of\\}
+%!
+%!!!!!!!! default is:
+%!
+\renewcommand{\thesissubmission}{Submitted to the University of Warwick\\
+                        for the degree of}
+%!
+%! In the title page this wording will be preceeded by:  thesis\\
+%!                 and ended by:  Doctor of Philosophy   (or the
+%!                                               selected alternative names
+%! use \\ where you want a new line
+
+\renewcommand{\thesisauthor} {Jeremy Francis Reizenstein}    %% Your official name.
+\renewcommand{\thesisauthorno}{1359119}  %! your university number, used on the library copyright page.
+
+%Month and year of submission
+\renewcommand{\thesismonth}{September}     %% Your month of graduation.
+
+\renewcommand{\thesisyear}{2018}      %% Your year of graduation.
+
+\renewcommand{\thesistitle}{Iterated-Integral Signatures in Machine Learning}     %% The title of your thesis; use
+                                     %% mixed-case.
+
+%! \renewcommand{\thesistitletypesize}{\LARGE}   %! Put this in if you
+                                  %!   want a Large title the default is \large
+
+%This is optional
+\renewcommand{\thesisauthorpreviousdegrees}{}
+                                     %% Your previous degrees, abbreviated;
+                                     %% separate multiple degrees by commas.
+
+\renewcommand{\thesissupervisor}{Anastasia Papavasiliou}
+                                     %% Your thesis supervisor; use mixed-case
+                                     %% and don't use any titles or degrees.
+
+%only used in VITA?
+\renewcommand{\thesisauthoraddress}{}
+                                     %% Your permanent address; use "\\" for
+                                     %% linebreaks.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%! For the library declaration page only
+%! \renewcommand{\thesiscopyrightagree}{agree}
+                        %! agreement to allow single photocopies this is the default
+%! \renewcommand{\thesiscopyrightagree}{do not agree}
+                        %! refusal  to allow single photocopies
+
+%! \renewcommand{\thesiscopyrightagreewhen}{immediately.}
+                        %! that is the default to be used in all but the most exceptional circumstances
+%! \renewcommand{\thesiscopyrightagreewhen}{after an embargo period of ……….................... months/years as agreed by the Chair of the Board of Graduate Studies.}
+                         %! An alternative, if you have permission. Replace the .... month/years with approved period or change the wording to insert a date.
+
+%! \renewcommand{\thesisinternetagree}{thesis can be made publicly available online.}
+                         %! default online declaration for WRAP
+%! \renewcommand{\thesisinternetagree}{thesis cannot be made publicly available online.}
+                          %! use if necessary
+%! \renewcommand{\thesisinternetagree}{thesis can be made publicly available only after…..}
+                          %! conditional agreement, please put the date in place of the dots, ending with a fullstop.
+%! \renewcommand{\thesisinternetagree}{full thesis cannot be made publicly available online, but I am submitting a separately identified additional abridged version that can be made available online.}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%
+%%% The following commands are all optional, but useful if your requirements
+%%% are different from the default values in utthesis.sty.  To use them,
+%%% simply uncomment (remove the leading %) the line(s).
+
+% \renewcommand{\thesisdegree}{...}  %% Uncomment this only if your thesis
+                                     %% degree is NOT "DOCTOR OF PHILOSOPHY"
+                                     %% for \phdthesis or "MASTER OF ARTS"
+                                     %% for \mastersthesis.  Provide the
+                                     %% correct FULL OFFICIAL name of
+                                     %% the degree.
+
+% \renewcommand{\thesisdegreeabbreviation}{...}
+                                     %% Use this if you also use the above
+                                     %% command; provide the OFFICIAL
+                                     %% abbreviation of your thesis degree.
+
+%\renewcommand{\thesistype}{Thesis}    %% Use this ONLY if your thesis type
+                                     %! is NOT "Thesis"
+                                     %% Provide the OFFICIAL type of the
+                                     %% thesis; use mixed-case.
+
+% \renewcommand{\thesistypist}{...}  %% Use this to specify the name of
+                                     %% the thesis typist if it is anything
+                                     %% other than "the author".
+
+%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\input header.tex          %! Input declarations, new
+                              %theorems etc.
+
+\begin{document}
+
+%TODO UNCOMMENT THIS
+%\thesiscopyrightpage                 %! Generate the copyright page for the library.
+%%%%%%%%%%% \thesiscopyrightpagehardcopyonly This only applies for a masters thesis that will not go online.
+
+\def \alph#1{{\color{bluee}\mathbf{#1}}}
+
+%%* Uncomment a ttitle page.
+%%TODO choose which
+%\thesistitlepage                     %% Generate the title page.
+\thesistitlecolourpage           %! Generates a COLOUR title page.
+
+%%* Start roman page numbering here for contents, etc
+\pagenumbering{roman} %! Begins roman numerals start from page i.
+
+\tableofcontents                     %% Generate table of contents.
+\listoftables                      %% Uncomment this to generate list
+                                     %% of tables.
+\listoffigures                     %% Uncomment this to generate list
+                                     %% of figures.
+%\listofalgorithms
+
+\begin{thesisacknowledgments}        %% Use this to write your
+%  \input ack.tex                    %% acknowledgments; it can be anything
+                                     %% allowed in LaTeX2e par-mode.
+
+                                     %! This following is not needed, but you may like to add it.
+%This \lowercase\expandafter{\thesistype} was typeset with
+%\LaTeXe\footnote{\LaTeXe{} is an extension of \LaTeX. \LaTeX{} is
+%a collection of macros for \TeX. \TeX{} is a trademark of the
+%American Mathematical Society. The style package {\em warwickthesis} was
+%used.} by \thesistypist.
+Thank you very much to my supervisors Anastasia Papavasiliou and Benjamin Graham. Thank you to so many people for collaborations, conversations and advice, especially  Joscha Diehl, 
+Terry Lyons, %ok, right?
+Sina Nejad, Harald Oberhauser, Michael Pearce, Daniel Wilson-Nunn, and the Complexity crew; and to many for broader support including my parents.
+
+Thank you for the support of the Complexity Science Doctoral Training Centre, The Alan Turing Institute\footnote{EPSRC grant EP/N510129/1} and the Engineering and Physical Sciences Research Council, and to their staff.
+%Thank you also for Microsoft’s donation of Azure credits to The Alan Turing Institute, which provided CPU time for the work in \autoref{sec:lstmsig}.
+Computing resources for the work in \autoref{sec:lstmsig} were provided through a kind Microsoft Azure for Research award to the Alan Turing Institute.
+Thank you for helpful pointers from two anonymous reviewers.
+\end{thesisacknowledgments}
+
+\begin{thesisdeclaration}        %! Use this to declare the extent of
+                 %! the original work,
+                 %! collaboration, other published
+                                 %! material etc.it can be anything
+                                 %% allowed in LaTeX2e par-mode.
+%Replace this text with a declaration of the extent of the original work,
+%collaboration, other published material etc. You can use any \LaTeX\
+%constructs.
+This thesis is submitted to the University of Warwick in support of my application for the degree of Doctor of Philosophy. 
+It has been composed by myself and has not been submitted in any previous application for any degree.
+The material in \autoref{chap:math} and \autoref{chap:aoa} stems from a collaboration with Joscha Diehl at MPI Leipzig. Most of sections~\ref{sec:fkk}, \ref{sec:myInvariant} and \ref{sec:rotinv2d} appear in \cite{invariants} which we have published.
+Sections \ref{sec:iisigintro} through \ref{sec:iisigConcl}, as well as parts of the introduction,  
+appear in \cite{iisigPaper} with my original supervisor Ben Graham which has been submitted for publication.
+\autoref{sec:lstmsig} stems from a collaboration with Harald Oberhauser.
+
+\end{thesisdeclaration}
+
+
+\begin{thesisabstract}               %% Use this to write your thesis
+                                     %% abstract; it can be anything
+                                     %% allowed in LaTeX2e par-mode.
+%!  \begin{singlespace}       %! uncomment this if you need single spacing
+%   \input abstract.tex       %!           don't forget the end spacing!
+                                     %! It must fit on one page.
+                                     %! single spacing and smaller
+                                     %! font size
+                                     %!  is allowed here.
+%!   \end{singlespace}
+The iterated-integral signature, or rough-path signature, of a path has proved useful in several machine learning applications in the last few years. This work is extended in a number of ways. Algorithms for computing the signature and log signature efficiently are investigated and evaluated, which is useful for many applications of signatures when working with large datasets. Online Chinese character recognition using signature features with recurrent neural networks is investigated. A recurrent neural network cell which stores its memory as the signature of a path is suggested and demonstrated on a toy problem. 
+
+There is an essentially unique element of the signature of a path in space which, under transformations of the space, scales with volume. That element is characterised geometrically.
+
+Given two features of curves, you can make a new one by taking the signed area of the 2d curve those two features make as a curve is traced out. A simple algebraic description of those features (which turn out to be signature elements) which can be formed from linear combinations of such combinations of total displacements is conjectured and worked towards. This is know as ``areas of areas''.
+\end{thesisabstract}
+
+%\begin{thesisabbreviations}       %! Use this to give a list of
+                                   %! abbreviateons
+                                   %! It can be anything
+%\end{thesisabbreviations}         %! allowed in LaTeX2e par-mode.
+                                   %!The following may be useful':
+                     %!\begin{itemize}
+                     %!     \item[symbol]descriptive text..
+                     %!\end{itemize}
+
+%\end{thesisabbreviations}
+%!!!!!!!!!!!!!!!                     %% Begin your thesis text here; follow
+                                     %% the report style and group your text
+                                     %% in chapters, sections, etc. eg:
+%%* don't need this with one-sided printing
+%\newpage{\pagestyle{empty}\cleardoublepage} %! ensure that Chapter 1 starts on an odd
+                                           %! page when using double sided printing.
+%Don't need notation section, unless I do much with shuffle closure stuff
+\iffalse%notation section
+\section*{Notation}
+When dealing with the tensor algebra and related concerns I often choose to adopt the notation of \cite{FLA}.
+
+There are a couple competing claims for the use of the $\otimes$ symbol in a work such as this, because we are dealing with the tensor algebra. % and numerics based on it.
+Besides when introducing the tensor algebra in 
+%TODO
+the symbol $\otimes$ is never used to indicate the product, otherwise known as the concatenation product, within the tensor algebra. It generally means the external tensor product, which produces (elements of) tensor powers of the tensor algebra. This is consistent with \cite{FLA}. But our $\otimes$ is what \url{https://en.wikipedia.org/wiki/Tensor_algebra} calls $\boxtimes$.
+%In section \ref{sec:backprop}, the symbol has a concrete meaning as the kronecker product of vectors of numbers. - no we underline it there for clarity
+\fi%notation section
+
+\section*{Where is the code?}
+\addcontentsline{toc}{section}{Where is the code?}
+There has, naturally, been a lot of computer code involved in this project.
+The good algorithms for signature and log signature calculations in \autoref{chap:iisig} have been released as part of the Python library \ii, whose homepage is at \url{github.com/bottler/iisignature}. 
+From there, it should be easy to find its documentation and tests. Some associated tools etc.~are in the \verb|examples| subfolder.
+Several other parts of this project have companion code in repositories of \url{github.com/bottler}, for example at \url{https://github.com/bottler/phd-code} and \url{https://github.com/bottler/free-lie-algebra-py}.
+
+%%* Start arabic numbering of main text here
+%I seem to be able to omit this
+%\pagenumbering{arabic} %! Begins arabic numerals start from page 1.
+\chapter{Introduction}
+\include{c_intro}
+\include{c_tools}
+\chapter{Invariants}
+\label{chap:math}
+\include{c_algebra}
+\chapter{Areas of Areas}
+\label{chap:aoa}
+\include{c_areasofareas}
+\chapter{Calculation of signatures}
+\label{chap:iisig}
+\include{c_iisign}
+\include{c_backprop}
+\chapter{Signatures in deep learning}
+\label{chap:deep}
+\include{c_chinese}
+\printindex
+\printbibliography[heading=bibintoc]
+
+
+\end{document}
+
