@@ -2,4 +2,4 @@ Some experiments and other code from my PhD work at Warwick supervised by Dr Ben
 
 Much of the most useful and important code is in specific repositories elsewhere, for example `iisignature`, `free-lie-algebra-py`, and `PythonMisc`.
 
-The folder `thesis` contains much the tex source of my final thesis.
+The folder `thesis` contains the `tex` source of my final thesis.
